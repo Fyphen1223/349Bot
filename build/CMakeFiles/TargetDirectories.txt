@@ -1,3 +1,0 @@
-/workspaces/349Bot/build/CMakeFiles/edit_cache.dir
-/workspaces/349Bot/build/CMakeFiles/rebuild_cache.dir
-/workspaces/349Bot/build/CMakeFiles/discord-bot.dir

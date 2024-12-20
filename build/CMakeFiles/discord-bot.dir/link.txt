@@ -1,1 +1,0 @@
-/usr/bin/c++     CMakeFiles/discord-bot.dir/src/main.cpp.o  -o discord-bot  /usr/lib/libdpp.so 
