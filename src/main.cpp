@@ -170,7 +170,7 @@ bool isValidConfig(const json &data) {
 
 void onMessageCreate(const dpp::message_create_t &event) {
 	if (event.msg.content.find("bad word") != std::string::npos) {
-		event.reply("That is not allowed here. Please, mind your language!", true);
+		event.reply("That is not allowed here. Please, mind your language!", false);
 	}
 }
 
@@ -224,10 +224,7 @@ int main(int argc, char *argv[]) {
 
 	bot.on_log(DiscordLogger);
 	bot.on_message_create([&bot](const dpp::message_create_t &event) {
-		if (event.msg.content.find("bad word") != std::string::npos) {
-			event.reply("That is not allowed here. Please, mind your language!",
-						true);
-		}
+		onMessageCreate(event);
 	});
 	bot.on_ready([&bot, shouldRegisterSlashCommands](const dpp::ready_t &event) {
 		info("Bot is ready.");
