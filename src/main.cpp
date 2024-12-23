@@ -1,28 +1,97 @@
 #include <dpp/dpp.h>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 #include <iostream>
 
-int print(std::string message) {
+using json = nlohmann::json;
+
+std::ifstream rawConfig("./config.json");
+
+const std::string RESET = "\033[0m";
+const std::string RED = "\033[31m";
+const std::string GREEN = "\033[32m";
+const std::string YELLOW = "\033[33m";
+const std::string BLUE = "\033[34m";
+const std::string MAGENTA = "\033[35m";
+const std::string CYAN = "\033[36m";
+const std::string WHITE = "\033[37m";
+
+const std::string BG_RED = "\033[41m";
+const std::string BG_GREEN = "\033[42m";
+const std::string BG_YELLOW = "\033[43m";
+const std::string BG_BLUE = "\033[44m";
+const std::string BG_MAGENTA = "\033[45m";
+const std::string BG_CYAN = "\033[46m";
+const std::string BG_WHITE = "\033[47m";
+
+void print(const std::string &message) {
 	std::cout << message << std::endl;
-	return 0;
+	return;
 }
 
+void print(const json &object) {
+	std::cout << object.dump(4) << std::endl;
+	return;
+}
+
+void print(const char *message) {
+	std::cout << message << std::endl;
+	return;
+}
+
+bool isValidConfig(const json &data) {
+	if (data.contains("token") && data.contains("intents")) {
+		return true;
+	}
+	return false;
+}
+
+void error(const std::string &message) {
+	print(BG_RED + "[ERR]: " + message + RESET);
+	return;
+}
+
+void warn(const std::string &message) {
+	print(BG_YELLOW + "[WARN]" + RESET + ": " + message + RESET);
+	return;
+}
+
+void info(const std::string &message) {
+	print(BG_BLUE + "[INFO]" + RESET + ": " + message);
+	return;
+}
+
+
 int main() {
-	/* Create the bot, but with our intents so we can use messages. */
+	if (rawConfig.is_open()) {
+		info("Config file opened successfully.");
+	} else {
+		error("Failed to parse config file.");
+		return 1;
+	}
+
+	warn("This is a warning message.");
+
+	json config;
+	try {
+		config = json::parse(rawConfig);
+	} catch (const json::parse_error &e) {
+		error("Illegal JSON format in config.json.");
+		return 1;
+	}
+
+	print(config);
+
+
+	/*
 	dpp::cluster bot(
 		"MTI4MjUyMTY2NzQ1Njg2NDI5Ng.GC6b6V.jhNACAu1nZye5_qGxVieuC_"
 		"Rjqn7VtNE7bUhGs",
 		dpp::i_default_intents | dpp::i_message_content);
 
 	bot.on_log(dpp::utility::cout_logger());
-
-	/* The event is fired when the bot detects a message in any server and any
-     * channel it has access to. */
 	bot.on_message_create([&bot](const dpp::message_create_t &event) {
-		/* See if the message contains the phrase we want to check for.
-	 * If there's at least a single match, we reply and say it's not
-	 * allowed.
-	 */
 		if (event.msg.content.find("bad word") != std::string::npos) {
 			event.reply("That is not allowed here. Please, mind your language!",
 						true);
@@ -30,6 +99,6 @@ int main() {
 	});
 
 	bot.start(dpp::st_wait);
-
+	*/
 	return 0;
 }
