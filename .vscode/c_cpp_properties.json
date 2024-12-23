@@ -3,18 +3,21 @@
         {
             "name": "WSL",
             "includePath": [
-                "${workspaceFolder}/**",
-                "/usr/include/**"
+                "${workspaceFolder}/**"//,
+                //"/usr/include/**"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "/usr/bin/g++",
-            "cStandard": "c11",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "gcc-x64"
+            //"compilerPath": "/usr/bin/g++",
+            //"cStandard": "c11",
+            //"cppStandard": "c++14",
+            //"intelliSenseMode": "linux-clang-x64",
+			"compilerArgs": [
+				"-std=c++23"
+			]
         }
     ],
     "version": 4

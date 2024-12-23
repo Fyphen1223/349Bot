@@ -85,7 +85,6 @@ int main() {
 
 	print(isValidConfig(config) ? "Valid config file." : "Invalid config file.");
 
-
 	/*
 	dpp::cluster bot(
 		"MTI4MjUyMTY2NzQ1Njg2NDI5Ng.GC6b6V.jhNACAu1nZye5_qGxVieuC_"
@@ -106,8 +105,9 @@ int main() {
 }
 
 int registerSlashCommands(dpp::cluster &bot) {
-	const dpp::slashcommand join("join", "Join a voice channel.", bot.me.id);
-	const dpp::slashcommand leave("leave", "Leave the voice channel.", bot.me.id);
-	const dpp::slashcommand play("play", "Play a song.", bot.me.id);
+	dpp::slashcommand join("join", "Join a voice channel.", bot.me.id);
+	dpp::slashcommand leave("leave", "Leave the voice channel.", bot.me.id);
+	dpp::slashcommand play("play", "Play a song.", bot.me.id);
+
 	return 0;
 }
