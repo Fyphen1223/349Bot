@@ -14,3 +14,11 @@ Some commands from this list will work:
 "gpgconf --kill gpg-agent"
 "gpgconf --launch gpg-agent"
 "export GPG_TTY=$(tty)"
+
+## Log level
+0: TRACE
+1: DEBUG
+2: INFO
+3: WARN
+4: ERROR
+5: CRITICAL
