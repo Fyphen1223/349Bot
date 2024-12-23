@@ -6,6 +6,11 @@
 
 using json = nlohmann::json;
 
+extern "C" {
+#include <unistd.h>
+}
+
+
 std::ifstream rawConfig("./config.json");
 
 const std::string RESET = "\033[0m";
@@ -40,13 +45,6 @@ void print(const char *message) {
 	return;
 }
 
-bool isValidConfig(const json &data) {
-	if (data.contains("token") && data.contains("intents")) {
-		return true;
-	}
-	return false;
-}
-
 void error(const std::string &message) {
 	print(BG_RED + "[ERR]: " + message + RESET);
 	return;
@@ -62,6 +60,12 @@ void info(const std::string &message) {
 	return;
 }
 
+bool isValidConfig(const json &data) {
+	if (data.contains("bot") && data["bot"].contains("token") && data["bot"].contains("applicationId")) {
+		return true;
+	}
+	return false;
+}
 
 int main() {
 	if (rawConfig.is_open()) {
@@ -71,8 +75,6 @@ int main() {
 		return 1;
 	}
 
-	warn("This is a warning message.");
-
 	json config;
 	try {
 		config = json::parse(rawConfig);
@@ -81,7 +83,7 @@ int main() {
 		return 1;
 	}
 
-	print(config);
+	print(isValidConfig(config) ? "Valid config file." : "Invalid config file.");
 
 
 	/*
@@ -100,5 +102,12 @@ int main() {
 
 	bot.start(dpp::st_wait);
 	*/
+	return 0;
+}
+
+int registerSlashCommands(dpp::cluster &bot) {
+	const dpp::slashcommand join("join", "Join a voice channel.", bot.me.id);
+	const dpp::slashcommand leave("leave", "Leave the voice channel.", bot.me.id);
+	const dpp::slashcommand play("play", "Play a song.", bot.me.id);
 	return 0;
 }
