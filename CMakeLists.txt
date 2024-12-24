@@ -23,6 +23,8 @@ pkg_search_module(OPUS REQUIRED opus)
 # Create an executable
 add_executable(${PROJECT_NAME}
     src/main.cpp
+	src/lib/print.cpp
+	src/lib/log.cpp
 )
 
 # add_library(math_utils OBJECT src/lib/math_utils.cppm)

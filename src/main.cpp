@@ -7,6 +7,9 @@
 #include <iostream>
 #include <thread>
 
+#include "lib/log.h"
+#include "lib/print.h"
+
 using json = nlohmann::json;
 
 extern "C" {
@@ -18,135 +21,13 @@ std::ifstream rawConfig("./config.json");
 
 json config;
 
-int logLevel = 2;
-
-const std::string RESET = "\033[0m";
-const std::string RED = "\033[31m";
-const std::string GREEN = "\033[32m";
-const std::string YELLOW = "\033[33m";
-const std::string BLUE = "\033[34m";
-const std::string MAGENTA = "\033[35m";
-const std::string CYAN = "\033[36m";
-const std::string WHITE = "\033[37m";
-
-const std::string BG_RED = "\033[41m";
-const std::string BG_GREEN = "\033[42m";
-const std::string BG_YELLOW = "\033[43m";
-const std::string BG_BLUE = "\033[44m";
-const std::string BG_MAGENTA = "\033[45m";
-const std::string BG_CYAN = "\033[46m";
-const std::string BG_WHITE = "\033[47m";
-
-void print(const std::string &message) {
-	std::cout << message << std::endl;
-	return;
+std::string getRestPing(dpp::cluster &bot) {
+	std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(bot.rest_ping));
+	return std::to_string(ms.count()) + " ms";
 }
 
-void print(const json &object) {
-	std::cout << object.dump(4) << std::endl;
-	return;
-}
-
-void print(const char *message) {
-	std::cout << message << std::endl;
-	return;
-}
-
-std::string getCurrentTime() {
-	auto now = std::chrono::system_clock::now();
-	auto in_time_t = std::chrono::system_clock::to_time_t(now);
-
-	std::stringstream ss;
-	ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
-	return ss.str();
-}
-
-std::string getFormattedTime() {
-	return "[" + getCurrentTime() + "]";
-}
-
-void error(const std::string &message) {
-	if (4 >= logLevel)
-		print(BG_RED + "[ERROR]" + RESET + getFormattedTime() + ": " + message);
-	return;
-}
-
-void warn(const std::string &message) {
-	if (3 >= logLevel)
-		print(BG_YELLOW + "[WARN]" + RESET + getFormattedTime() + ": " + message);
-	return;
-}
-
-void info(const std::string &message) {
-	if (2 >= logLevel)
-		print(BG_BLUE + "[INFO]" + RESET + getFormattedTime() + ": " + message);
-	return;
-}
-
-void logDebug(const std::string &message) {
-	if (1 >= logLevel)
-		print(BG_GREEN + "[DEBUG]" + RESET + getFormattedTime() + ": " + message);
-	return;
-}
-
-void logTrace(const std::string &message) {
-	if (0 >= logLevel)
-		print(BG_CYAN + "[TRACE]" + RESET + getFormattedTime() + ": " + message);
-	return;
-}
-
-void logCritical(const std::string &message) {
-	if (5 >= logLevel)
-		print(BG_MAGENTA + "[CRITICAL]" + RESET + getFormattedTime() + ": " + message);
-	return;
-}
-
-void logUnknown(const std::string &message) {
-	print("[UNKNOWN]" + getFormattedTime() + ": " + message);
-	return;
-}
-
-void DiscordLogger(const dpp::log_t &log) {
-	std::string severity;
-	switch (log.severity) {
-		case dpp::ll_trace:
-			severity = "TRACE";
-			break;
-		case dpp::ll_debug:
-			severity = "DEBUG";
-			break;
-		case dpp::ll_info:
-			severity = "INFO";
-			break;
-		case dpp::ll_warning:
-			severity = "WARNING";
-			break;
-		case dpp::ll_error:
-			severity = "ERROR";
-			break;
-		case dpp::ll_critical:
-			severity = "CRITICAL";
-			break;
-		default:
-			severity = "UNKNOWN";
-			break;
-	}
-
-	if (severity == "TRACE") {
-		logTrace(log.message);
-	} else if (severity == "DEBUG") {
-		logDebug(log.message);
-	} else if (severity == "INFO") {
-		info(log.message);
-	} else if (severity == "WARNING") {
-		warn(log.message);
-	} else if (severity == "ERROR") {
-		error(log.message);
-	} else if (severity == "CRITICAL") {
-		logCritical(log.message);
-	} else {
-		logUnknown(log.message);
-	}
+void executePing(dpp::cluster &bot, const dpp::slashcommand_t &event) {
+	event.reply("Pong! REST Ping: " + getRestPing(bot));
 }
 
 int registerSlashCommands(dpp::cluster &bot) {
@@ -168,11 +49,20 @@ bool isValidConfig(const json &data) {
 	return false;
 }
 
-void onMessageCreate(const dpp::message_create_t &event) {
+void onMessageCreate(dpp::cluster &bot, const dpp::message_create_t &event) {
 	if (event.msg.content.find("bad word") != std::string::npos) {
 		event.reply("That is not allowed here. Please, mind your language!", false);
 	}
 }
+
+void onSlashCommands(dpp::cluster &bot, const dpp::slashcommand_t &event) {
+	const std::string commandName = event.command.get_command_name();
+
+	if (commandName == "ping") {
+		executePing(bot, event);
+	}
+}
+
 
 int main(int argc, char *argv[]) {
 	if (rawConfig.is_open()) {
@@ -195,11 +85,12 @@ int main(int argc, char *argv[]) {
 	}
 	info("Valid config file.");
 
-	logLevel = config["log"]["level"];
-	if (logLevel < 0 || logLevel > 5) {
-		logLevel = 2;
+	int configLogLevel = config["log"]["level"];
+	if (configLogLevel < 0 || configLogLevel > 5) {
+		setLogLevel(2);
 		error("Invalid log level. Defaulting to 2.");
 	}
+	setLogLevel(configLogLevel);
 
 	bool shouldRegisterSlashCommands = false;
 	for (int i = 0; i < argc; ++i) {
@@ -224,7 +115,10 @@ int main(int argc, char *argv[]) {
 
 	bot.on_log(DiscordLogger);
 	bot.on_message_create([&bot](const dpp::message_create_t &event) {
-		onMessageCreate(event);
+		onMessageCreate(bot, event);
+	});
+	bot.on_slashcommand([&bot](const dpp::slashcommand_t &event) {
+		onSlashCommands(bot, event);
 	});
 	bot.on_ready([&bot, shouldRegisterSlashCommands](const dpp::ready_t &event) {
 		info("Bot is ready.");
