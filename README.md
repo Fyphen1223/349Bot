@@ -33,3 +33,7 @@ and then try signing.
 ```bash
 cmake --build build --config Release
 ```
+
+```bash
+ cmake -DCMAKE_TOOLCHAIN_FILE=toolchain-mingw.cmake -B windows
+```

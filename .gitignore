@@ -34,3 +34,4 @@
 openssl-3.0.14/*
 vcpkg/*
 build/*
+windows/*
