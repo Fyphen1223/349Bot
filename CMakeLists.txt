@@ -26,6 +26,8 @@ add_executable(${PROJECT_NAME}
 	src/lib/print.cpp
 	src/lib/log.cpp
 	src/util/register.cpp
+	src/events/messageCreate.cpp
+	src/events/slashcommandsCreate.cpp
 )
 
 # add_library(math_utils OBJECT src/lib/math_utils.cppm)

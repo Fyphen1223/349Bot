@@ -7,6 +7,8 @@
 #include <iostream>
 #include <thread>
 
+#include "events/messageCreate.h"
+#include "events/slashcommandsCreate.h"
 #include "lib/log.h"
 #include "lib/print.h"
 #include "util/register.h"
@@ -17,36 +19,12 @@ std::ifstream rawConfig("./config.json");
 
 json config;
 
-std::string getRestPing(dpp::cluster &bot) {
-	std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(bot.rest_ping));
-	return std::to_string(ms.count()) + " ms";
-}
-
-void executePing(dpp::cluster &bot, const dpp::slashcommand_t &event) {
-	event.reply("Pong! REST Ping: " + getRestPing(bot));
-}
-
 bool isValidConfig(const json &data) {
 	if (data.contains("bot") && data["bot"].contains("token") && data["bot"].contains("applicationId") && data.contains("log") && data["log"].contains("level") && data["log"]["level"].is_number()) {
 		return true;
 	}
 	return false;
 }
-
-void onMessageCreate(dpp::cluster &bot, const dpp::message_create_t &event) {
-	if (event.msg.content.find("bad word") != std::string::npos) {
-		event.reply("That is not allowed here. Please, mind your language!", false);
-	}
-}
-
-void onSlashCommands(dpp::cluster &bot, const dpp::slashcommand_t &event) {
-	const std::string commandName = event.command.get_command_name();
-
-	if (commandName == "ping") {
-		executePing(bot, event);
-	}
-}
-
 
 int main(int argc, char *argv[]) {
 	if (rawConfig.is_open()) {
