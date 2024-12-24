@@ -22,3 +22,8 @@ Some commands from this list will work:
 3: WARN
 4: ERROR
 5: CRITICAL
+
+## Build
+```bash
+cmake --build build --config Release
+```

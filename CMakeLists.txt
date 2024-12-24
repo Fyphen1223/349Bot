@@ -25,6 +25,9 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
 )
 
+# add_library(math_utils OBJECT src/lib/math_utils.cppm)
+
+
 find_package(DPP CONFIG REQUIRED)
 
 # Link the pre-installed DPP package.
@@ -35,8 +38,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${DPP_INCLUDE_DIR} ${OPUS_INCLUDE_DIRS}
 )
 
+# add_dependencies(${PROJECT_NAME} math_utils)
+
+add_compile_options(-fmodules-ts)
+
 # Set C++ version
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
 )
