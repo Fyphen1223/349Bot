@@ -10,6 +10,12 @@ To resolve this issue, I recommend using terminal(WSL terminal/VSCode internal t
 
 Some commands from this list will work:
 
+Do this
+
+"echo "hoge" | gpg --clearsign --no-autostart --pinentry-mode=loopback"
+
+and then try signing.
+
 "killall gpg-agent"
 "gpgconf --kill gpg-agent"
 "gpgconf --launch gpg-agent"
