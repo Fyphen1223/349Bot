@@ -13,11 +13,6 @@
 
 using json = nlohmann::json;
 
-extern "C" {
-#include <unistd.h>
-}
-
-
 std::ifstream rawConfig("./config.json");
 
 json config;
