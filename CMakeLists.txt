@@ -20,7 +20,12 @@ FetchContent_MakeAvailable(json)
 
 pkg_search_module(OPUS REQUIRED opus)
 
+#include_directories(websocketpp)
+
 # Create an executable
+include_directories(/usr/local/include/hv)
+link_directories(/usr/local/lib)
+
 add_executable(${PROJECT_NAME}
     src/main.cpp
 	src/lib/print.cpp
@@ -28,6 +33,8 @@ add_executable(${PROJECT_NAME}
 	src/util/register.cpp
 	src/events/messageCreate.cpp
 	src/events/slashcommandsCreate.cpp
+	src/lavacop/lavacop.cpp
+	src/lavacop/src/lavalink.cpp
 )
 
 # add_library(math_utils OBJECT src/lib/math_utils.cppm)
@@ -36,7 +43,7 @@ add_executable(${PROJECT_NAME}
 find_package(DPP CONFIG REQUIRED)
 
 # Link the pre-installed DPP package.
-target_link_libraries(${PROJECT_NAME} PRIVATE dpp::dpp ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} ZLIB::ZLIB ${OPUS_LIBRARIES} nlohmann_json::nlohmann_json)
+target_link_libraries(${PROJECT_NAME} PRIVATE dpp::dpp ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} ZLIB::ZLIB ${OPUS_LIBRARIES} nlohmann_json::nlohmann_json hv)
 
 # Include the DPP directories.
 target_include_directories(${PROJECT_NAME} PRIVATE

@@ -77,6 +77,13 @@
 		"thread": "cpp",
 		"typeinfo": "cpp",
 		"valarray": "cpp",
-		"variant": "cpp"
+		"variant": "cpp",
+		"bitset": "cpp",
+		"regex": "cpp",
+		"strstream": "cpp",
+		"complex": "cpp",
+		"source_location": "cpp",
+		"cinttypes": "cpp",
+		"typeindex": "cpp"
 	}
 }
