@@ -141,6 +141,7 @@ struct LavaLinkConfig {
 
 class LavaLink {
   public:
+	LavaLink() = default;
 	LavaLink(const LavaLinkConfig &config)
 		: config(config) {
 		ws.onMessage([this](const std::string &msg) {

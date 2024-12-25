@@ -1,3 +1,5 @@
+#include <player.h>
+
 #include "hv/WebSocketClient.h"
 #include "hv/requests.h"
 #include "lavalink.h"
@@ -9,23 +11,21 @@
 #include <utility>
 #include <vector>
 
-//#include <../lavacop.h>
 using namespace hv;
 
 struct PlayerConfig {
 	std::function<void(const std::string &guildId, std::string &payload)> sendPayload;
+	LavaLink *lavalink;
 };
 
 
 class Player {
   public:
 	Player(const PlayerConfig &config)
-		: config(config) {
+		: config(config), lavalink(config.lavalink) {
+		printf("Player created\n");
 	}
 
-	void onReady(const std::function<void()> &callback) {
-		readyCallbacks.push_back(callback);
-	}
 	void onEvent(const std::function<void(std::string data)> &callback) {
 		eventsCallbacks.push_back(callback);
 	}
@@ -35,13 +35,7 @@ class Player {
 	void onPlayerUpdate(const std::function<void(std::string data)> &callback) {
 		playerUpdateCallbacks.push_back(callback);
 	}
-	void onClose(const std::function<void()> &callback) {
-		closeCallbacks.push_back(callback);
-	}
 
-	void removeAllReadyListeners() {
-		readyCallbacks.clear();
-	}
 	void removeAllEventListeners() {
 		eventsCallbacks.clear();
 	}
@@ -51,19 +45,12 @@ class Player {
 	void removeAllPlayerUpdateListeners() {
 		playerUpdateCallbacks.clear();
 	}
-	void removeAllCloseListeners() {
-		closeCallbacks.clear();
-	}
-
 
   private:
-	PlayerConfig config;
-	std::vector<std::function<void()>> readyCallbacks;
+	const PlayerConfig &config;
 	std::vector<std::function<void(std::string &data)>> eventsCallbacks;
 	std::vector<std::function<void(std::string &data)>> stateCallbacks;
 	std::vector<std::function<void(std::string &data)>> playerUpdateCallbacks;
-	std::vector<std::function<void()>> closeCallbacks;
 	std::string guildId;
-	std::string fetchUrl;
-	LavaLink lavalink;
+	LavaLink *lavalink;
 };
