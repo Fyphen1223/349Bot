@@ -1,7 +1,14 @@
 #include "hv/WebSocketClient.h"
+#include "hv/requests.h"
 #include <atomic>
 #include <chrono>
+#include <functional>
+#include <map>
 #include <thread>
+#include <utility>
+#include <vector>
+
+//#include <../lavacop.h>
 using namespace hv;
 
 class WS {
@@ -121,10 +128,21 @@ void startWebSocket() {
 }
 */
 
+struct LavaLinkConfig {
+	std::string ip;
+	std::string port;
+	bool secure = true;
+	std::string password = "youshallnotpass";
+	std::string serverName = "default";
+	std::string userAgent;
+	std::function<void(const std::string &guildId, std::string &payload)> sendPayload;
+};
+
+
 class LavaLink {
   public:
-	LavaLink(const std::string &url)
-		: url(url) {
+	LavaLink(const LavaLinkConfig &config)
+		: config(config) {
 		ws.onMessage([this](const std::string &msg) {
 			printf("onMessage: %s\n", msg.c_str());
 		});
@@ -136,6 +154,19 @@ class LavaLink {
 			printf("onClose\n");
 		});
 	}
+
+	LavaLink(LavaLink &&other) noexcept
+		: config(std::move(other.config)) {
+	}
+
+	LavaLink &operator=(LavaLink &&other) noexcept {
+		if (this != &other) {
+			config = std::move(other.config);
+		}
+		return *this;
+	}
+	LavaLink(const LavaLink &) = delete;
+	LavaLink &operator=(const LavaLink &) = delete;
 
 	void open() {
 		ws.open(url);
@@ -149,7 +180,49 @@ class LavaLink {
 		ws.send(msg);
 	}
 
+
+	void onReady(const std::function<void()> &callback) {
+		readyCallbacks.push_back(callback);
+	}
+	void onEvent(const std::function<void(std::string data)> &callback) {
+		eventsCallbacks.push_back(callback);
+	}
+	void onState(const std::function<void(std::string data)> &callback) {
+		stateCallbacks.push_back(callback);
+	}
+	void onPlayerUpdate(const std::function<void(std::string data)> &callback) {
+		playerUpdateCallbacks.push_back(callback);
+	}
+	void onClose(const std::function<void()> &callback) {
+		closeCallbacks.push_back(callback);
+	}
+
+	void removeAllReadyListeners() {
+		readyCallbacks.clear();
+	}
+	void removeAllEventListeners() {
+		eventsCallbacks.clear();
+	}
+	void removeAllStateListeners() {
+		stateCallbacks.clear();
+	}
+	void removeAllPlayerUpdateListeners() {
+		playerUpdateCallbacks.clear();
+	}
+	void removeAllCloseListeners() {
+		closeCallbacks.clear();
+	}
+
+
   private:
 	std::string url;
 	WS ws;
+	LavaLinkConfig config;
+	std::vector<std::function<void()>> readyCallbacks;
+	std::vector<std::function<void(std::string &data)>> eventsCallbacks;
+	std::vector<std::function<void(std::string &data)>> stateCallbacks;
+	std::vector<std::function<void(std::string &data)>> playerUpdateCallbacks;
+	std::vector<std::function<void()>> closeCallbacks;
+	std::string sessionId;
+	std::string fetchUrl;
 };
