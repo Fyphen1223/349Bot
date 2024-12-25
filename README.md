@@ -37,3 +37,10 @@ cmake --build build --config Release
 ```bash
  cmake -DCMAKE_TOOLCHAIN_FILE=toolchain-mingw.cmake -B windows
 ```
+
+To build libhv, you have to do this:
+```bash
+./configure
+make --DWITH_OPENSSL
+make install
+```
