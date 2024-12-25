@@ -70,6 +70,9 @@ class LavaLink {
 	void removeAllPlayerUpdateListeners();
 	void removeAllCloseListeners();
 
+	std::string sessionId;
+
+
   private:
 	std::string url;
 	WS ws;
@@ -79,7 +82,6 @@ class LavaLink {
 	std::vector<std::function<void(std::string &data)>> stateCallbacks;
 	std::vector<std::function<void(std::string &data)>> playerUpdateCallbacks;
 	std::vector<std::function<void()>> closeCallbacks;
-	std::string sessionId;
 };
 
 #endif// LAVALINK_H

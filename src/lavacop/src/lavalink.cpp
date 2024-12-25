@@ -214,6 +214,7 @@ class LavaLink {
 		closeCallbacks.clear();
 	}
 
+	std::string sessionId;
 
   private:
 	std::string url;
@@ -224,6 +225,5 @@ class LavaLink {
 	std::vector<std::function<void(std::string &data)>> stateCallbacks;
 	std::vector<std::function<void(std::string &data)>> playerUpdateCallbacks;
 	std::vector<std::function<void()>> closeCallbacks;
-	std::string sessionId;
 	std::string fetchUrl;
 };
