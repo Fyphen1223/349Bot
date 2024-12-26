@@ -1,6 +1,7 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include "../global.h"
 #include "dpp/dpp.h"
 #include <iostream>
 

@@ -4,11 +4,15 @@
 
 #include <chrono>
 #include <ctime>
+#include <functional>
 #include <iostream>
 #include <thread>
 
 #include "events/messageCreate.h"
 #include "events/slashcommandsCreate.h"
+//#include "lavacop/globals.h"
+#include "global.h"
+#include "lavacop/lavacop.h"
 #include "lib/log.h"
 #include "lib/print.h"
 #include "util/register.h"
@@ -18,6 +22,7 @@ using json = nlohmann::json;
 std::ifstream rawConfig("./config.json");
 
 json config;
+
 
 bool isValidConfig(const json &data) {
 	if (data.contains("bot") && data["bot"].contains("token") && data["bot"].contains("applicationId") && data.contains("log") && data["log"].contains("level") && data["log"]["level"].is_number()) {
@@ -46,7 +51,6 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	info("Valid config file.");
-
 	int configLogLevel = config["log"]["level"];
 	if (configLogLevel < 0 || configLogLevel > 5) {
 		setLogLevel(2);
@@ -76,16 +80,24 @@ int main(int argc, char *argv[]) {
 					 dpp::i_default_intents | dpp::i_message_content);
 
 	bot.on_log(DiscordLogger);
-	bot.on_message_create([&bot](const dpp::message_create_t &event) {
+	bot.on_message_create([&](const dpp::message_create_t &event) {
 		onMessageCreate(bot, event);
 	});
-	bot.on_slashcommand([&bot](const dpp::slashcommand_t &event) {
+	bot.on_slashcommand([&](const dpp::slashcommand_t &event) {
 		onSlashCommands(bot, event);
 	});
 	bot.on_ready([&bot, shouldRegisterSlashCommands](const dpp::ready_t &event) {
 		info("Bot is ready.");
+		LC.setBotId(config["bot"]["applicationId"]);
+		LC.setUserAgent("LavaCop/0.0.1");
 		if (shouldRegisterSlashCommands)
 			registerSlashCommands(bot);
+
+		const std::string botId = config["bot"]["applicationId"];
+		const std::function<void(const std::string &, std::string &)> sendPayload = [](const std::string &guildId, std::string &payload) {
+			print("Payload sent to guild " + guildId + ": " + payload);
+		};
+		LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .sendPayload = sendPayload, .botId = botId});
 	});
 
 	bot.start(dpp::st_wait);

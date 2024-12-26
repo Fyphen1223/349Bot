@@ -1,229 +1,247 @@
-#include "hv/WebSocketClient.h"
-#include "hv/requests.h"
-#include <atomic>
-#include <chrono>
-#include <functional>
-#include <map>
-#include <thread>
-#include <utility>
-#include <vector>
+#include "lavalink.h"
+
 
 //#include <../lavacop.h>
 using namespace hv;
 
-class WS {
-  public:
-	WS()
-		: is_open(false) {
-		ws.onopen = [this]() {
-			is_open = true;
-			for (const auto &callback: on_open_callbacks) {
-				callback();
-			}
-		};
-		ws.onmessage = [this](const std::string &msg) {
-			for (const auto &callback: on_message_callbacks) {
-				callback(msg);
-			}
-		};
-		ws.onclose = [this]() {
-			is_open = false;
-			loop.stop();
-			for (const auto &callback: on_close_callbacks) {
-				callback();
-			}
-		};
-		reconn_setting_init(&reconn);
-		reconn.min_delay = 1000;
-		reconn.max_delay = 10000;
-		reconn.delay_policy = 2;
-		ws.setReconnect(&reconn);
-	}
-
-	void open(const std::string &url) {
-		if (is_open) {
-			return;
+WS::WS()
+	: is_open(false) {
+	ws.onopen = [this]() {
+		printf("Opened\n");
+		is_open = true;
+		for (const auto &callback: on_open_callbacks) {
+			callback();
 		}
-		ws.open(url.c_str());
-		loop.run();
-	}
-
-	void setPingInterval(int interval) {
-		if (!is_open) {
-			return;
+	};
+	ws.onmessage = [this](const std::string &msg) {
+		printf("Received: %s\n", msg.c_str());
+		for (const auto &callback: on_message_callbacks) {
+			callback(msg);
 		}
-		ws.setPingInterval(interval);
-	}
-
-	void send(const std::string &msg) {
-		if (!is_open) {
-			printf("WebSocket is not open\n");
-			return;
+	};
+	ws.onclose = [this]() {
+		printf("Closed\n");
+		is_open.store(false);
+		//loop.stop();
+		for (const auto &callback: on_close_callbacks) {
+			callback();
 		}
-		printf("send: %s\n", msg.c_str());
-		ws.send(msg);
-	}
-
-	void close() {
-		if (!is_open) {
-			return;
-		}
-		ws.close();
-	}
-
-	void onMessage(const std::function<void(const std::string &)> &callback) {
-		on_message_callbacks.push_back(callback);
-	}
-
-	void onOpen(const std::function<void()> &callback) {
-		on_open_callbacks.push_back(callback);
-	}
-
-	void onClose(const std::function<void()> &callback) {
-		on_close_callbacks.push_back(callback);
-	}
-
-	/*
-	void removeMessageListener(const std::function<void(const std::string &)> &callback) {
-		on_message_callbacks.erase(std::remove(on_message_callbacks.begin(), on_message_callbacks.end(), callback), on_message_callbacks.end());
-	}
-	void removeOpenListener(const std::function<void()> &callback) {
-		on_open_callbacks.erase(std::remove(on_open_callbacks.begin(), on_open_callbacks.end(), callback), on_open_callbacks.end());
-	}
-	void removeCloseListener(const std::function<void()> &callback) {
-		on_close_callbacks.erase(std::remove(on_close_callbacks.begin(), on_close_callbacks.end(), callback), on_close_callbacks.end());
-	}
-	*/
-
-	void removeAllMessageListeners() {
-		on_message_callbacks.clear();
-	}
-	void removeAllOpenListeners() {
-		on_open_callbacks.clear();
-	}
-	void removeAllCloseListeners() {
-		on_close_callbacks.clear();
-	}
-
-  private:
-	hv::WebSocketClient ws;
-	hv::EventLoop loop;
-	std::atomic<bool> is_open;
-	reconn_setting_t reconn;
-	std::vector<std::function<void(const std::string &)>> on_message_callbacks;
-	std::vector<std::function<void()>> on_open_callbacks;
-	std::vector<std::function<void()>> on_close_callbacks;
-};
-
-/*
-void startWebSocket() {
-	WS ws;
-	ws.onMessage([](const std::string &msg) {
-		std::cout << "onMessage: " << msg << std::endl;
-	});
-	ws.onOpen([&ws]() {
-		ws.send("Hello, WebSocket!");
-	});
-	ws.open("wss://echo.websocket.org:443");
+	};
+	reconn_setting_init(&reconn);
+	reconn.min_delay = 1000;
+	reconn.max_delay = 10000;
+	reconn.delay_policy = 2;
+	ws.setReconnect(&reconn);
 }
-*/
 
-struct LavaLinkConfig {
-	std::string ip;
-	std::string port;
-	bool secure = true;
-	std::string password = "youshallnotpass";
-	std::string serverName = "default";
-	std::string userAgent;
-	std::function<void(const std::string &guildId, std::string &payload)> sendPayload;
-};
+void WS::onOpen(const std::function<void()> &callback) {
+	on_open_callbacks.push_back(callback);
+}
 
+void WS::onClose(const std::function<void()> &callback) {
+	on_close_callbacks.push_back(callback);
+}
 
-class LavaLink {
-  public:
-	LavaLink() = default;
-	LavaLink(const LavaLinkConfig &config)
-		: config(config) {
-		ws.onMessage([this](const std::string &msg) {
-			printf("onMessage: %s\n", msg.c_str());
-		});
-		ws.onOpen([this]() {
-			printf("onOpen\n");
-			ws.send("Hello, WebSocket!");
-		});
-		ws.onClose([this]() {
-			printf("onClose\n");
-		});
+void WS::onMessage(const std::function<void(const std::string &)> &callback) {
+	on_message_callbacks.push_back(callback);
+}
+
+void WS::open(const std::string &url, const http_headers &headers) {
+	if (url.empty()) {
+		printf("url is empty\n");
 	}
-
-	LavaLink(LavaLink &&other) noexcept
-		: config(std::move(other.config)) {
-	}
-
-	LavaLink &operator=(LavaLink &&other) noexcept {
-		if (this != &other) {
-			config = std::move(other.config);
+	ws.onopen = [this]() {
+		is_open = true;
+		for (const auto &callback: on_open_callbacks) {
+			callback();
 		}
-		return *this;
-	}
-	LavaLink(const LavaLink &) = delete;
-	LavaLink &operator=(const LavaLink &) = delete;
+	};
+	ws.onmessage = [this](const std::string &msg) {
+		for (const auto &callback: on_message_callbacks) {
+			callback(msg);
+		}
+	};
+	ws.onclose = [this]() {
+		is_open = false;
+		for (const auto &callback: on_close_callbacks) {
+			callback();
+		}
+	};
+	ws.open(url.c_str(), headers);
+}
 
-	void open() {
-		ws.open(url);
+void WS::close() {
+	if (!is_open) {
+		return;
 	}
+	ws.close();
+}
 
-	void close() {
-		ws.close();
+void WS::setPingInterval(int interval) {
+	if (!is_open) {
+		return;
 	}
+	ws.setPingInterval(interval);
+}
 
-	void send(const std::string &msg) {
-		ws.send(msg);
+void WS::send(const std::string &msg) {
+	if (!is_open) {
+		return;
 	}
+	ws.send(msg);
+}
 
+void WS::removeAllMessageListeners() {
+	on_message_callbacks.clear();
+}
 
-	void onReady(const std::function<void()> &callback) {
-		readyCallbacks.push_back(callback);
-	}
-	void onEvent(const std::function<void(std::string data)> &callback) {
-		eventsCallbacks.push_back(callback);
-	}
-	void onState(const std::function<void(std::string data)> &callback) {
-		stateCallbacks.push_back(callback);
-	}
-	void onPlayerUpdate(const std::function<void(std::string data)> &callback) {
-		playerUpdateCallbacks.push_back(callback);
-	}
-	void onClose(const std::function<void()> &callback) {
-		closeCallbacks.push_back(callback);
-	}
+void WS::removeAllOpenListeners() {
+	on_open_callbacks.clear();
+}
 
-	void removeAllReadyListeners() {
-		readyCallbacks.clear();
-	}
-	void removeAllEventListeners() {
-		eventsCallbacks.clear();
-	}
-	void removeAllStateListeners() {
-		stateCallbacks.clear();
-	}
-	void removeAllPlayerUpdateListeners() {
-		playerUpdateCallbacks.clear();
-	}
-	void removeAllCloseListeners() {
-		closeCallbacks.clear();
-	}
+void WS::removeAllCloseListeners() {
+	on_close_callbacks.clear();
+}
 
-	std::string sessionId;
+//WS
 
-  private:
-	std::string url;
-	WS ws;
-	LavaLinkConfig config;
-	std::vector<std::function<void()>> readyCallbacks;
-	std::vector<std::function<void(std::string &data)>> eventsCallbacks;
-	std::vector<std::function<void(std::string &data)>> stateCallbacks;
-	std::vector<std::function<void(std::string &data)>> playerUpdateCallbacks;
-	std::vector<std::function<void()>> closeCallbacks;
-	std::string fetchUrl;
-};
+LavaLink::LavaLink(const LavaLinkConfig &config)
+	: config(config) {
+	url = (config.secure ? "wss://" : "ws://") + config.ip + ":" + config.port + "/v4/websocket";
+	fetchUrl = (config.secure ? "https://" : "http://") + config.ip + ":" + config.port;
+	password = config.password;
+	botId = config.botId;
+	userAgent = config.userAgent;
+}
+
+LavaLink::LavaLink(LavaLink &&other) noexcept
+	: config(std::move(other.config)) {
+	password = std::move(other.password);
+	botId = std::move(other.botId);
+	userAgent = std::move(other.userAgent);
+	url = std::move(other.url);
+	fetchUrl = std::move(other.fetchUrl);
+}
+
+LavaLink &LavaLink::operator=(LavaLink &&other) noexcept {
+	if (this != &other) {
+		config = std::move(other.config);
+		password = std::move(other.password);
+		botId = std::move(other.botId);
+		userAgent = std::move(other.userAgent);
+	}
+	return *this;
+}
+
+void LavaLink::close() {
+	ws.close();
+}
+
+void LavaLink::send(const std::string &msg) {
+	ws.send(msg);
+}
+
+void LavaLink::onReady(const std::function<void()> &callback) {
+	readyCallbacks.push_back(callback);
+}
+
+void LavaLink::onState(const std::function<void(std::string data)> &callback) {
+	stateCallbacks.push_back(callback);
+}
+
+void LavaLink::onPlayerUpdate(const std::function<void(std::string data)> &callback) {
+	playerUpdateCallbacks.push_back(callback);
+}
+
+void LavaLink::onClose(const std::function<void()> &callback) {
+	closeCallbacks.push_back(callback);
+}
+
+void LavaLink::removeAllReadyListeners() {
+	readyCallbacks.clear();
+}
+
+void LavaLink::removeAllStateListeners() {
+	stateCallbacks.clear();
+}
+
+void LavaLink::removeAllPlayerUpdateListeners() {
+	playerUpdateCallbacks.clear();
+}
+
+void LavaLink::removeAllCloseListeners() {
+	closeCallbacks.clear();
+}
+
+void LavaLink::emitReady() {
+	for (auto &callback: readyCallbacks) {
+		callback();
+	}
+}
+
+void LavaLink::emitState(std::string &data) {
+	for (auto &callback: stateCallbacks) {
+		callback(data);
+	}
+}
+
+void LavaLink::emitPlayerUpdate(std::string &data) {
+	for (auto &callback: playerUpdateCallbacks) {
+		callback(data);
+	}
+}
+
+void LavaLink::emitClose() {
+	for (auto &callback: closeCallbacks) {
+		callback();
+	}
+}
+
+void LavaLink::connect() {
+	http_headers headers;
+	headers["Authorization"] = password;
+	headers["User-Id"] = botId;
+	headers["Client-Name"] = userAgent;
+	ws.onClose([this]() {
+		emitClose();
+	});
+	ws.onOpen([this]() {
+		emitReady();
+	});
+	ws.open(url, headers);
+}
+
+std::string encodeIdentifier(const std::string &identifier) {
+	std::string encoded;
+	for (char c: identifier) {
+		if (c == ':') {
+			encoded += "%3A";
+		} else if (c == '&') {
+			encoded += "%26";
+		} else if (c == '=') {
+			encoded += "%3D";
+		} else if (c == '?') {
+			encoded += "%3F";
+		} else if (c == ',') {
+			encoded += "%2C";
+		} else if (c == '+') {
+			encoded += "%2B";
+		} else if (c == ' ') {
+			encoded += "%20";
+		} else {
+			encoded += c;
+		}
+	}
+	return encoded;
+}
+
+nlohmann::json LavaLink::loadTracks(const std::string &identifier) {
+	http_headers headers;
+	headers["Authorization"] = password;
+	auto resp = requests::get((fetchUrl + "/v4/loadtracks?identifier=" + encodeIdentifier(identifier)).c_str(), headers);
+	if (resp == nullptr) {
+		printf("request failed or returned non-200 status!\n");
+		return nlohmann::json();
+	}
+	return nlohmann::json::parse(resp->body);
+}

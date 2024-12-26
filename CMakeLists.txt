@@ -35,6 +35,7 @@ add_executable(${PROJECT_NAME}
 	src/events/slashcommandsCreate.cpp
 	src/lavacop/lavacop.cpp
 	src/lavacop/src/lavalink.cpp
+	src/global.cpp
 )
 
 # add_library(math_utils OBJECT src/lib/math_utils.cppm)

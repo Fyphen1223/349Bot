@@ -25,11 +25,10 @@ struct connectionInfo {
 };
 
 
-
 class Player {
   public:
 	Player(const PlayerConfig &config)
-		: config(config), lavalink(config.lavalink) {
+		: config(config), LavaLink(config.lavalink) {
 		printf("Player created\n");
 	}
 
@@ -109,7 +108,7 @@ class Player {
 	bool playing = false;
 
 	std::string guildId;
-	LavaLink *lavalink;
+	LavaLink *LavaLink;
 
   private:
 	const PlayerConfig &config;
