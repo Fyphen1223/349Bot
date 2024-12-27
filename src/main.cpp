@@ -10,7 +10,6 @@
 
 #include "events/messageCreate.h"
 #include "events/slashcommandsCreate.h"
-//#include "lavacop/globals.h"
 #include "global.h"
 #include "lavacop/lavacop.h"
 #include "lib/log.h"

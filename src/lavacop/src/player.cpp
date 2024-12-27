@@ -1,11 +1,11 @@
 #include <player.h>
 
-#include "hv/WebSocketClient.h"
-#include "hv/requests.h"
 #include "lavalink.h"
 #include <atomic>
 #include <chrono>
 #include <functional>
+#include <hv/WebSocketClient.h>
+#include <hv/requests.h>
 #include <map>
 #include <thread>
 #include <utility>

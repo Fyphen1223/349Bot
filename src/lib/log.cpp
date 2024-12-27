@@ -36,37 +36,37 @@ int logLevel = 2;
 
 void error(const std::string &message) {
 	if (4 >= logLevel)
-		print(BG_RED + "[ERRR]" + RESET + getFormattedTime() + ": " + message);
+		print(BG_RED + "[ERROR]" + RESET + getFormattedTime() + ": " + message);
 	return;
 }
 
 void warn(const std::string &message) {
 	if (3 >= logLevel)
-		print(BG_YELLOW + "[WARN]" + RESET + getFormattedTime() + ": " + message);
+		print(BG_YELLOW + "[WARN ]" + RESET + getFormattedTime() + ": " + message);
 	return;
 }
 
 void info(const std::string &message) {
 	if (2 >= logLevel)
-		print(BG_BLUE + "[INFO]" + RESET + getFormattedTime() + ": " + message);
+		print(BG_BLUE + "[INFO ]" + RESET + getFormattedTime() + ": " + message);
 	return;
 }
 
 void logDebug(const std::string &message) {
 	if (1 >= logLevel)
-		print(BG_GREEN + "[DBUG]" + RESET + getFormattedTime() + ": " + message);
+		print(BG_GREEN + "[DEBUG]" + RESET + getFormattedTime() + ": " + message);
 	return;
 }
 
 void logTrace(const std::string &message) {
 	if (0 >= logLevel)
-		print(BG_CYAN + "[TRCE]" + RESET + getFormattedTime() + ": " + message);
+		print(BG_CYAN + "[TRACE]" + RESET + getFormattedTime() + ": " + message);
 	return;
 }
 
 void logCritical(const std::string &message) {
 	if (5 >= logLevel)
-		print(BG_MAGENTA + "[CRIT]" + RESET + getFormattedTime() + ": " + message);
+		print(BG_MAGENTA + "[CRITICAL]" + RESET + getFormattedTime() + ": " + message);
 	return;
 }
 

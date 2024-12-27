@@ -1,12 +1,12 @@
 #ifndef LAVALINK_H
 #define LAVALINK_H
 
-#include "../../lib/log.h"
-#include "hv/WebSocketClient.h"
-#include "hv/requests.h"
+//#include "../../lib/log.h"
 #include <atomic>
 #include <chrono>
 #include <functional>
+#include <hv/WebSocketClient.h>
+#include <hv/requests.h>
 #include <string>
 #include <vector>
 
@@ -40,7 +40,6 @@ class WS {
 
 	hv::WebSocketClient ws;
 	std::atomic<bool> is_open;
-	//hv::EventLoop loop;
 
   private:
 	reconn_setting_t reconn;

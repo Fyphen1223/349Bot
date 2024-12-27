@@ -7,22 +7,18 @@ using namespace hv;
 WS::WS()
 	: is_open(false) {
 	ws.onopen = [this]() {
-		printf("Opened\n");
 		is_open = true;
 		for (const auto &callback: on_open_callbacks) {
 			callback();
 		}
 	};
 	ws.onmessage = [this](const std::string &msg) {
-		printf("Received: %s\n", msg.c_str());
 		for (const auto &callback: on_message_callbacks) {
 			callback(msg);
 		}
 	};
 	ws.onclose = [this]() {
-		printf("Closed\n");
 		is_open.store(false);
-		//loop.stop();
 		for (const auto &callback: on_close_callbacks) {
 			callback();
 		}
@@ -48,7 +44,7 @@ void WS::onMessage(const std::function<void(const std::string &)> &callback) {
 
 void WS::open(const std::string &url, const http_headers &headers) {
 	if (url.empty()) {
-		printf("url is empty\n");
+		printf("[lavacop] WebSocket URL is empty\n");
 	}
 	ws.onopen = [this]() {
 		is_open = true;
@@ -240,7 +236,6 @@ nlohmann::json LavaLink::loadTracks(const std::string &identifier) {
 	headers["Authorization"] = password;
 	auto resp = requests::get((fetchUrl + "/v4/loadtracks?identifier=" + encodeIdentifier(identifier)).c_str(), headers);
 	if (resp == nullptr) {
-		printf("request failed or returned non-200 status!\n");
 		return nlohmann::json();
 	}
 	return nlohmann::json::parse(resp->body);
