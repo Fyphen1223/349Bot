@@ -101,8 +101,8 @@ void WS::removeAllCloseListeners() {
 
 //WS
 
-LavaLink::LavaLink(const LavaLinkConfig &config)
-	: config(config) {
+LavaLink::LavaLink(const LavaLinkConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload)
+	: config(config), sendPayload(sendPayload) {
 	url = (config.secure ? "wss://" : "ws://") + config.ip + ":" + config.port + "/v4/websocket";
 	fetchUrl = (config.secure ? "https://" : "http://") + config.ip + ":" + config.port;
 	password = config.password;
@@ -117,6 +117,7 @@ LavaLink::LavaLink(LavaLink &&other) noexcept
 	userAgent = std::move(other.userAgent);
 	url = std::move(other.url);
 	fetchUrl = std::move(other.fetchUrl);
+	sendPayload = std::move(other.sendPayload);
 }
 
 LavaLink &LavaLink::operator=(LavaLink &&other) noexcept {
@@ -239,4 +240,22 @@ nlohmann::json LavaLink::loadTracks(const std::string &identifier) {
 		return nlohmann::json();
 	}
 	return nlohmann::json::parse(resp->body);
+}
+
+void LavaLink::join(const dpp::snowflake &guildId, const dpp::snowflake &channelId, const bool &selfDeaf, const bool &selfMute) {
+	nlohmann::json payload = {
+		{"op", 4},
+		{"d", {{"guild_id", guildId}, {"channel_id", channelId}, {"self_mute", selfMute}, {"self_deaf", selfDeaf}}}};
+
+	std::string payload_str = payload.dump();
+	if (sendPayload) {
+		std::string guildIdStr = std::to_string(guildId);
+		sendPayload(guildIdStr, payload_str);
+	} else {
+		printf("sendPayload is not set.\n");
+	}
+}
+
+void LavaLink::setSendPayload(const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload) {
+	this->sendPayload = sendPayload;
 }

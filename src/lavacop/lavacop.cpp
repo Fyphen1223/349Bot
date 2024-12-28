@@ -9,7 +9,7 @@ void lavacop::purge() {
 }
 
 void lavacop::addNode(const LavaLinkConfig &config) {
-	LavaLink node(config);
+	LavaLink node(config, sendPayload);
 	std::lock_guard<std::mutex> lock(mutex);
 	Nodes.push_back(std::move(node));
 	Nodes.back().connect();
@@ -22,6 +22,10 @@ void lavacop::setBotId(const std::string &id) {
 void lavacop::setUserAgent(const std::string &agent) {
 	userAgent = agent;
 }
+
+void lavacop::setSendPayload(const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload) {
+	this->sendPayload = sendPayload;
+};
 
 void lavacop::handleRaw(const nlohmann::json &raw) {
 	if (raw["t"] == "VOICE_SERVER_UPDATE") {

@@ -78,6 +78,11 @@ int main(int argc, char *argv[]) {
 	dpp::cluster bot(config["bot"]["token"],
 					 dpp::i_default_intents | dpp::i_message_content);
 
+	BH.setBot(&bot);
+	LC.setSendPayload([&](const std::string &guildId, const std::string &payload) {
+		BH.sendPayload(guildId, payload);
+	});
+
 	bot.on_log(DiscordLogger);
 	bot.on_message_create([&](const dpp::message_create_t &event) {
 		onMessageCreate(bot, event);
@@ -96,9 +101,14 @@ int main(int argc, char *argv[]) {
 		const std::function<void(const std::string &, std::string &)> sendPayload = [](const std::string &guildId, std::string &payload) {
 			print("Payload sent to guild " + guildId + ": " + payload);
 		};
-		LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .sendPayload = sendPayload, .botId = botId});
+		//LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .sendPayload = sendPayload, .botId = botId});
+		const std::string guild_id_str = "919809544648020008";
+		dpp::snowflake guild_id = static_cast<dpp::snowflake>(std::stoull(guild_id_str));
+		const std::string channel_id_str = "919809544648020012";
+		dpp::snowflake channel_id = static_cast<dpp::snowflake>(std::stoull(channel_id_str));
+		LC.getIdealNode()->join(guild_id, channel_id, true, true);
 	});
-
+	//bot.get_rest()
 	bot.start(dpp::st_wait);
 	return 0;
 }

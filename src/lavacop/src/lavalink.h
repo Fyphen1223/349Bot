@@ -1,9 +1,9 @@
 #ifndef LAVALINK_H
 #define LAVALINK_H
 
-//#include "../../lib/log.h"
 #include <atomic>
 #include <chrono>
+#include <dpp/dpp.h>
 #include <functional>
 #include <hv/WebSocketClient.h>
 #include <hv/requests.h>
@@ -17,7 +17,6 @@ struct LavaLinkConfig {
 	std::string password = "youshallnotpass";
 	std::string serverName = "default";
 	std::string userAgent;
-	std::function<void(const std::string &guildId, std::string &payload)> sendPayload;
 	std::string botId;
 };
 
@@ -51,7 +50,7 @@ class WS {
 class LavaLink {
   public:
 	LavaLink() = default;
-	LavaLink(const LavaLinkConfig &config);
+	LavaLink(const LavaLinkConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload);
 	LavaLink(LavaLink &&other) noexcept;
 	LavaLink &operator=(LavaLink &&other) noexcept;
 	LavaLink(const LavaLink &) = delete;
@@ -76,7 +75,13 @@ class LavaLink {
 	void emitPlayerUpdate(std::string &data);
 	void emitClose();
 
+	void setSendPayload(const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload);
+
 	nlohmann::json loadTracks(const std::string &identifier);
+
+	void join(const dpp::snowflake &guildId, const dpp::snowflake &channelId, const bool &selfDeaf = false, const bool &selfMute = false);
+	//void leave(const dpp::snowflake &guildId);
+
 
 	std::string url;
 	std::string fetchUrl;
@@ -91,6 +96,8 @@ class LavaLink {
 	std::vector<std::function<void(std::string &data)>> stateCallbacks;
 	std::vector<std::function<void(std::string &data)>> playerUpdateCallbacks;
 	std::vector<std::function<void()>> closeCallbacks;
+
+	std::function<void(const std::string &guildId, const std::string &payload)> sendPayload;
 };
 
 #endif// LAVALINK_H
