@@ -26,7 +26,7 @@ class lavacop {
 	std::string userAgent;
 	std::vector<LavaLink> Nodes;
 	std::mutex mutex;
-	std::function<void(std::string &guildId, std::string &payload)> sendPayload;
+	std::function<void(const std::string &guildId, const std::string &payload)> sendPayload;
 };
 
 #endif// LAVACOP_H

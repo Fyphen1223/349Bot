@@ -76,11 +76,20 @@ int main(int argc, char *argv[]) {
 		warn("Running as root. This is not recommended.");
 
 	dpp::cluster bot(config["bot"]["token"],
-					 dpp::i_default_intents | dpp::i_message_content);
+					 dpp::intents::i_all_intents);
 
 	BH.setBot(&bot);
-	LC.setSendPayload([&](const std::string &guildId, const std::string &payload) {
+
+	LC.setSendPayload([](const std::string &guildId, const std::string &payload) {
 		BH.sendPayload(guildId, payload);
+	});
+	bot.on_voice_state_update([&](const dpp::voice_state_update_t &event) {
+		const nlohmann::json raw = json::parse(event.raw_event);
+		LC.handleRaw(raw);
+	});
+	bot.on_voice_server_update([&](const dpp::voice_server_update_t &event) {
+		const nlohmann::json raw = json::parse(event.raw_event);
+		LC.handleRaw(raw);
 	});
 
 	bot.on_log(DiscordLogger);
@@ -101,7 +110,9 @@ int main(int argc, char *argv[]) {
 		const std::function<void(const std::string &, std::string &)> sendPayload = [](const std::string &guildId, std::string &payload) {
 			print("Payload sent to guild " + guildId + ": " + payload);
 		};
-		//LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .sendPayload = sendPayload, .botId = botId});
+		LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .botId = botId});
+
+		std::this_thread::sleep_for(std::chrono::seconds(5));
 		const std::string guild_id_str = "919809544648020008";
 		dpp::snowflake guild_id = static_cast<dpp::snowflake>(std::stoull(guild_id_str));
 		const std::string channel_id_str = "919809544648020012";
