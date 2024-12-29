@@ -267,7 +267,7 @@ void LavaLink::join(const dpp::snowflake &guildId, const dpp::snowflake &channel
 	if (sendPayload) {
 		std::string guildIdStr = std::to_string(guildId);
 		sendPayload(guildIdStr, payload_str);
-		Players[guildIdStr] = Player(PlayerConfig{.sendPayload = sendPayload, .lavalink = this});
+		Players[guildIdStr] = Player(PlayerConfig{.sendPayload = sendPayload, .lavalink = this, .guildId = guildIdStr});
 	} else {
 		printf("sendPayload is not set.\n");
 	}
@@ -277,8 +277,8 @@ void LavaLink::setSendPayload(const std::function<void(const std::string &guildI
 	this->sendPayload = sendPayload;
 }
 
-Player::Player(const PlayerConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload)
-	: config(config), sendPayload(sendPayload) {
+Player::Player(const PlayerConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload, const std::string &guildId)
+	: config(config), sendPayload(sendPayload), guildId(guildId) {
 }
 
 Player::Player(Player &&other) noexcept
@@ -311,20 +311,21 @@ Player &Player::operator=(Player &&other) noexcept {
 	return *this;
 }
 
-
-/*
 nlohmann::json Player::update(const nlohmann::json &data, const bool noReplace) {
-	nlohmann::json payload = {
-		{"op", 6},
-		{"guildId", config.guildId},
-		{"track", data["track"]},
-		{"noReplace", noReplace}};
-	std::string payload_str = payload.dump();
-	if (sendPayload) {
-		sendPayload(config.guildId, payload_str);
-	} else {
-		printf("sendPayload is not set.\n");
+	if (Node.sessionId.empty()) {
+		printf("[lavacop:lavalink]sessionId is empty.\n");
+		return nlohmann::json();
 	}
-	return payload;
+
+	http_headers headers;
+	headers["Authorization"] = Node.password;
+
+	const std::string d = data.dump();
+	auto resp = requests::patch((Node.fetchUrl + "/v4/sessions/" + Node.sessionId + "/players/" + guildId + "?noReplace=" + (noReplace ? "true" : "false")).c_str(), d, headers);
+	if (resp == nullptr) {
+		return nlohmann::json();
+	}
+	return nlohmann::json::parse(resp->body);
 }
-*/
+
+//void Player::handleEvents()

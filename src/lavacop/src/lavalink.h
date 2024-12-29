@@ -29,6 +29,7 @@ struct LavaLinkConfig {
 struct PlayerConfig {
 	std::function<void(const std::string &guildId, std::string &payload)> sendPayload;
 	LavaLink *lavalink;
+	std::string guildId;
 };
 
 struct connectionInfo {
@@ -123,7 +124,9 @@ class LavaLink {
 class Player {
   public:
 	Player() = default;
-	Player(const PlayerConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload);
+	Player(const PlayerConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload, const std::string &guildId)
+		: config(config) {
+		  };
 	Player(Player &&other) noexcept;
 	Player &operator=(Player &&other) noexcept;
 	Player(const Player &) = delete;
@@ -175,6 +178,7 @@ class Player {
   private:
 	PlayerConfig config;
 	LavaLink Node;
+	std::string guildId;
 
 	std::vector<std::function<void(std::string data)>> stateCallbacks;
 	std::vector<std::function<void(std::string data)>> playerUpdateCallbacks;
