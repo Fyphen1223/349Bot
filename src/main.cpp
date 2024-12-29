@@ -101,6 +101,7 @@ int main(int argc, char *argv[]) {
 	});
 	bot.on_ready([&bot, shouldRegisterSlashCommands](const dpp::ready_t &event) {
 		info("Bot is ready.");
+
 		LC.setBotId(config["bot"]["applicationId"]);
 		LC.setUserAgent("LavaCop/0.0.1");
 		if (shouldRegisterSlashCommands)
@@ -112,14 +113,13 @@ int main(int argc, char *argv[]) {
 		};
 		LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .botId = botId});
 
-		std::this_thread::sleep_for(std::chrono::seconds(5));
+		std::this_thread::sleep_for(std::chrono::seconds(2));
 		const std::string guild_id_str = "919809544648020008";
 		dpp::snowflake guild_id = static_cast<dpp::snowflake>(std::stoull(guild_id_str));
 		const std::string channel_id_str = "919809544648020012";
 		dpp::snowflake channel_id = static_cast<dpp::snowflake>(std::stoull(channel_id_str));
 		LC.getIdealNode()->join(guild_id, channel_id, true, true);
 	});
-	//bot.get_rest()
 	bot.start(dpp::st_wait);
 	return 0;
 }

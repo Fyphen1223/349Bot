@@ -7,8 +7,14 @@
 #include <functional>
 #include <hv/WebSocketClient.h>
 #include <hv/requests.h>
+#include <iostream>
+#include <map>
 #include <string>
 #include <vector>
+
+class WS;
+class LavaLink;
+class Player;
 
 struct LavaLinkConfig {
 	std::string ip;
@@ -19,6 +25,18 @@ struct LavaLinkConfig {
 	std::string userAgent;
 	std::string botId;
 };
+
+struct PlayerConfig {
+	std::function<void(const std::string &guildId, std::string &payload)> sendPayload;
+	LavaLink *lavalink;
+};
+
+struct connectionInfo {
+	std::string token;
+	std::string endpoint;
+	std::string sessionId;
+};
+
 
 class WS {
   public:
@@ -59,21 +77,19 @@ class LavaLink {
 	void close();
 	void send(const std::string &msg);
 	void connect();
+	bool isReachable();
 
 	void onReady(const std::function<void()> &callback);
-	void onState(const std::function<void(std::string data)> &callback);
-	void onPlayerUpdate(const std::function<void(std::string data)> &callback);
 	void onClose(const std::function<void()> &callback);
+	void onMessage(const std::function<void(std::string data)> &callback);
 
 	void removeAllReadyListeners();
-	void removeAllStateListeners();
-	void removeAllPlayerUpdateListeners();
 	void removeAllCloseListeners();
+	void removeAllMessageListeners();
 
 	void emitReady();
-	void emitState(std::string &data);
-	void emitPlayerUpdate(std::string &data);
 	void emitClose();
+	void emitMessage(const std::string &msg);
 
 	void setSendPayload(const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload);
 
@@ -90,14 +106,86 @@ class LavaLink {
 	std::string userAgent;
 	LavaLinkConfig config;
 
+	std::map<std::string, Player> Players;
+
+	std::string sessionId;
+
   private:
 	WS ws;
 	std::vector<std::function<void()>> readyCallbacks;
-	std::vector<std::function<void(std::string &data)>> stateCallbacks;
-	std::vector<std::function<void(std::string &data)>> playerUpdateCallbacks;
 	std::vector<std::function<void()>> closeCallbacks;
+	std::vector<std::function<void(std::string data)>> messageCallbacks;
+
 
 	std::function<void(const std::string &guildId, const std::string &payload)> sendPayload;
 };
+
+class Player {
+  public:
+	Player() = default;
+	Player(const PlayerConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload);
+	Player(Player &&other) noexcept;
+	Player &operator=(Player &&other) noexcept;
+	Player(const Player &) = delete;
+	Player &operator=(const Player &) = delete;
+	Player(const PlayerConfig &config)
+		: config(config) {
+	}
+
+	void onState(const std::function<void(std::string data)> &callback) {
+		stateCallbacks.push_back(callback);
+	}
+	void onPlayerUpdate(const std::function<void(std::string data)> &callback) {
+		playerUpdateCallbacks.push_back(callback);
+	}
+	void onTrackStart(const std::function<void(std::string data)> &callback) {
+		trackStartCallbacks.push_back(callback);
+	}
+	void onTrackEnd(const std::function<void(std::string data)> &callback) {
+		trackEndCallbacks.push_back(callback);
+	}
+	void onTrackException(const std::function<void(std::string data)> &callback) {
+		trackExceptionCallbacks.push_back(callback);
+	}
+	void onTrackStuck(const std::function<void(std::string data)> &callback) {
+		trackStuckCallbacks.push_back(callback);
+	}
+	void onWebSocketClosed(const std::function<void(std::string data)> &callback) {
+		webSocketClosedCallbacks.push_back(callback);
+	}
+
+	void removeAllStateListeners() {
+		stateCallbacks.clear();
+	}
+	void removeAllPlayerUpdateListeners() {
+		playerUpdateCallbacks.clear();
+	}
+	void removeAllTrackStartListeners() {
+		trackStartCallbacks.clear();
+	}
+	void removeAllTrackEndListeners() {
+		trackEndCallbacks.clear();
+	}
+	void removeAllTrackExceptionListeners() {
+		trackExceptionCallbacks.clear();
+	}
+
+	nlohmann::json update(const nlohmann::json &data, const bool noReplace = false);
+
+  private:
+	PlayerConfig config;
+	LavaLink Node;
+
+	std::vector<std::function<void(std::string data)>> stateCallbacks;
+	std::vector<std::function<void(std::string data)>> playerUpdateCallbacks;
+	std::vector<std::function<void(std::string data)>> trackStartCallbacks;
+	std::vector<std::function<void(std::string data)>> trackEndCallbacks;
+	std::vector<std::function<void(std::string data)>> trackExceptionCallbacks;
+	std::vector<std::function<void(std::string data)>> trackStuckCallbacks;
+	std::vector<std::function<void(std::string data)>> webSocketClosedCallbacks;
+
+	std::function<void(const std::string &guildId, const std::string &payload)> sendPayload;
+};
+
 
 #endif// LAVALINK_H

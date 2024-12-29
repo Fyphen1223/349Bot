@@ -44,8 +44,9 @@ void WS::onMessage(const std::function<void(const std::string &)> &callback) {
 
 void WS::open(const std::string &url, const http_headers &headers) {
 	if (url.empty()) {
-		printf("[lavacop] WebSocket URL is empty\n");
+		printf("[lavacop:WebSocket] WebSocket URL is empty\n");
 	}
+
 	ws.onopen = [this]() {
 		is_open = true;
 		for (const auto &callback: on_open_callbacks) {
@@ -112,20 +113,36 @@ LavaLink::LavaLink(const LavaLinkConfig &config, const std::function<void(const 
 
 LavaLink::LavaLink(LavaLink &&other) noexcept
 	: config(std::move(other.config)) {
+	url = std::move(other.url);
+	fetchUrl = std::move(other.fetchUrl);
 	password = std::move(other.password);
 	botId = std::move(other.botId);
 	userAgent = std::move(other.userAgent);
-	url = std::move(other.url);
-	fetchUrl = std::move(other.fetchUrl);
+
+	Players = std::move(other.Players);
+
+	readyCallbacks = std::move(other.readyCallbacks);
+	closeCallbacks = std::move(other.closeCallbacks);
+	messageCallbacks = std::move(other.messageCallbacks);
+
 	sendPayload = std::move(other.sendPayload);
 }
 
 LavaLink &LavaLink::operator=(LavaLink &&other) noexcept {
 	if (this != &other) {
-		config = std::move(other.config);
+		url = std::move(other.url);
+		fetchUrl = std::move(other.fetchUrl);
 		password = std::move(other.password);
 		botId = std::move(other.botId);
 		userAgent = std::move(other.userAgent);
+
+		Players = std::move(other.Players);
+
+		readyCallbacks = std::move(other.readyCallbacks);
+		closeCallbacks = std::move(other.closeCallbacks);
+		messageCallbacks = std::move(other.messageCallbacks);
+
+		sendPayload = std::move(other.sendPayload);
 	}
 	return *this;
 }
@@ -142,32 +159,24 @@ void LavaLink::onReady(const std::function<void()> &callback) {
 	readyCallbacks.push_back(callback);
 }
 
-void LavaLink::onState(const std::function<void(std::string data)> &callback) {
-	stateCallbacks.push_back(callback);
-}
-
-void LavaLink::onPlayerUpdate(const std::function<void(std::string data)> &callback) {
-	playerUpdateCallbacks.push_back(callback);
-}
-
 void LavaLink::onClose(const std::function<void()> &callback) {
 	closeCallbacks.push_back(callback);
+}
+
+void LavaLink::onMessage(const std::function<void(const std::string data)> &callback) {
+	messageCallbacks.push_back(callback);
 }
 
 void LavaLink::removeAllReadyListeners() {
 	readyCallbacks.clear();
 }
 
-void LavaLink::removeAllStateListeners() {
-	stateCallbacks.clear();
-}
-
-void LavaLink::removeAllPlayerUpdateListeners() {
-	playerUpdateCallbacks.clear();
-}
-
 void LavaLink::removeAllCloseListeners() {
 	closeCallbacks.clear();
+}
+
+void LavaLink::removeAllMessageListeners() {
+	messageCallbacks.clear();
 }
 
 void LavaLink::emitReady() {
@@ -176,21 +185,15 @@ void LavaLink::emitReady() {
 	}
 }
 
-void LavaLink::emitState(std::string &data) {
-	for (auto &callback: stateCallbacks) {
-		callback(data);
-	}
-}
-
-void LavaLink::emitPlayerUpdate(std::string &data) {
-	for (auto &callback: playerUpdateCallbacks) {
-		callback(data);
-	}
-}
-
 void LavaLink::emitClose() {
 	for (auto &callback: closeCallbacks) {
 		callback();
+	}
+}
+
+void LavaLink::emitMessage(const std::string &msg) {
+	for (auto &callback: messageCallbacks) {
+		callback(msg);
 	}
 }
 
@@ -202,10 +205,23 @@ void LavaLink::connect() {
 	ws.onClose([this]() {
 		emitClose();
 	});
-	ws.onOpen([this]() {
-		emitReady();
+	ws.onMessage([this](const std::string &msg) {
+		nlohmann::json data = nlohmann::json::parse(msg);
+		if (data["op"] == "ready") {
+			sessionId = data["sessionId"];
+			emitReady();
+		}
+		emitMessage(msg);
 	});
 	ws.open(url, headers);
+}
+
+bool LavaLink::isReachable() {
+	auto resp = requests::get((url + "/").c_str());
+	if (resp == nullptr) {
+		return false;
+	}
+	return true;
 }
 
 std::string encodeIdentifier(const std::string &identifier) {
@@ -251,6 +267,7 @@ void LavaLink::join(const dpp::snowflake &guildId, const dpp::snowflake &channel
 	if (sendPayload) {
 		std::string guildIdStr = std::to_string(guildId);
 		sendPayload(guildIdStr, payload_str);
+		Players[guildIdStr] = Player(PlayerConfig{.sendPayload = sendPayload, .lavalink = this});
 	} else {
 		printf("sendPayload is not set.\n");
 	}
@@ -259,3 +276,55 @@ void LavaLink::join(const dpp::snowflake &guildId, const dpp::snowflake &channel
 void LavaLink::setSendPayload(const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload) {
 	this->sendPayload = sendPayload;
 }
+
+Player::Player(const PlayerConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload)
+	: config(config), sendPayload(sendPayload) {
+}
+
+Player::Player(Player &&other) noexcept
+	: config(std::move(other.config)) {
+	config = std::move(other.config);
+	Node = std::move(other.Node);
+	sendPayload = std::move(other.sendPayload);
+	stateCallbacks = std::move(other.stateCallbacks);
+	playerUpdateCallbacks = std::move(other.playerUpdateCallbacks);
+	trackStartCallbacks = std::move(other.trackStartCallbacks);
+	trackEndCallbacks = std::move(other.trackEndCallbacks);
+	trackExceptionCallbacks = std::move(other.trackExceptionCallbacks);
+	trackStuckCallbacks = std::move(other.trackStuckCallbacks);
+	webSocketClosedCallbacks = std::move(other.webSocketClosedCallbacks);
+}
+
+Player &Player::operator=(Player &&other) noexcept {
+	if (this != &other) {
+		config = std::move(other.config);
+		Node = std::move(other.Node);
+		sendPayload = std::move(other.sendPayload);
+		stateCallbacks = std::move(other.stateCallbacks);
+		playerUpdateCallbacks = std::move(other.playerUpdateCallbacks);
+		trackStartCallbacks = std::move(other.trackStartCallbacks);
+		trackEndCallbacks = std::move(other.trackEndCallbacks);
+		trackExceptionCallbacks = std::move(other.trackExceptionCallbacks);
+		trackStuckCallbacks = std::move(other.trackStuckCallbacks);
+		webSocketClosedCallbacks = std::move(other.webSocketClosedCallbacks);
+	}
+	return *this;
+}
+
+
+/*
+nlohmann::json Player::update(const nlohmann::json &data, const bool noReplace) {
+	nlohmann::json payload = {
+		{"op", 6},
+		{"guildId", config.guildId},
+		{"track", data["track"]},
+		{"noReplace", noReplace}};
+	std::string payload_str = payload.dump();
+	if (sendPayload) {
+		sendPayload(config.guildId, payload_str);
+	} else {
+		printf("sendPayload is not set.\n");
+	}
+	return payload;
+}
+*/

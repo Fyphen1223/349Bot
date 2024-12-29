@@ -11,8 +11,12 @@ void lavacop::purge() {
 void lavacop::addNode(const LavaLinkConfig &config) {
 	LavaLink node(config, sendPayload);
 	std::lock_guard<std::mutex> lock(mutex);
-	Nodes.push_back(std::move(node));
-	Nodes.back().connect();
+	if (node.isReachable()) {
+		Nodes.push_back(std::move(node));
+		Nodes.back().connect();
+	} else {
+		std::cerr << "[lavacop:lavalink] Could not reach to the node." << std::endl;
+	}
 }
 
 void lavacop::setBotId(const std::string &id) {
