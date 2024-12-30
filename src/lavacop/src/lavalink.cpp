@@ -233,39 +233,32 @@ bool LavaLink::isReachable() {
 	return true;
 }
 
-std::string encodeIdentifier(const std::string &identifier) {
-	std::string encoded;
-	for (char c: identifier) {
-		if (c == ':') {
-			encoded += "%3A";
-		} else if (c == '&') {
-			encoded += "%26";
-		} else if (c == '=') {
-			encoded += "%3D";
-		} else if (c == '?') {
-			encoded += "%3F";
-		} else if (c == ',') {
-			encoded += "%2C";
-		} else if (c == '+') {
-			encoded += "%2B";
-		} else if (c == ' ') {
-			encoded += "%20";
+std::string urlEncode(const std::string &value) {
+	std::ostringstream escaped;
+	escaped.fill('0');
+	escaped << std::hex;
+
+	for (char c: value) {
+		if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+			escaped << c;
 		} else {
-			encoded += c;
+			escaped << '%' << std::setw(2) << int((unsigned char) c);
 		}
 	}
-	return encoded;
+
+	return escaped.str();
 }
 
 nlohmann::json LavaLink::loadTracks(const std::string &identifier) {
 	http_headers headers;
 	headers["Authorization"] = password;
-	auto resp = requests::get((fetchUrl + "/v4/loadtracks?identifier=" + encodeIdentifier(identifier)).c_str(), headers);
+	auto resp = requests::get((fetchUrl + "/v4/loadtracks?identifier=" + urlEncode(identifier)).c_str(), headers);
 	if (resp == nullptr) {
 		return nlohmann::json();
 	}
 	return nlohmann::json::parse(resp->body);
 }
+
 
 void LavaLink::join(const std::string &guildId, const std::string &channelId, const bool &selfDeaf, const bool &selfMute) {
 	nlohmann::json payload = {

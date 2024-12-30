@@ -120,12 +120,14 @@ int main(int argc, char *argv[]) {
 		}
 		Node->join(guildId, channelId, true, true);
 		std::this_thread::sleep_for(std::chrono::seconds(2));
-		const nlohmann::json data = Node->loadTracks("ytsearch:Avicii wake me up");
+		const nlohmann::json data = Node->loadTracks("ytsearch: ヒカキン");
 		const std::string track = data["data"][0]["encoded"];
 		auto &p = Node->getPlayer(guildId);
 		p.onTrackStart([&](const std::string &data) {
 			info("Track started.");
 			info(data);
+			p.volume(30);
+			/*
 			std::this_thread::sleep_for(std::chrono::seconds(2));
 			p.pause();
 			std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -136,6 +138,7 @@ int main(int argc, char *argv[]) {
 			p.volume(20);
 			std::this_thread::sleep_for(std::chrono::seconds(2));
 			p.stop();
+			*/
 		});
 		p.play(track);
 	});
