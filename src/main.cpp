@@ -126,6 +126,16 @@ int main(int argc, char *argv[]) {
 		p.onTrackStart([&](const std::string &data) {
 			info("Track started.");
 			info(data);
+			std::this_thread::sleep_for(std::chrono::seconds(2));
+			p.pause();
+			std::this_thread::sleep_for(std::chrono::seconds(2));
+			p.resume();
+			std::this_thread::sleep_for(std::chrono::seconds(2));
+			p.seek(30000);
+			std::this_thread::sleep_for(std::chrono::seconds(2));
+			p.volume(20);
+			std::this_thread::sleep_for(std::chrono::seconds(2));
+			p.stop();
 		});
 		p.play(track);
 	});

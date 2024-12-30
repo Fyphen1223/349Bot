@@ -417,3 +417,37 @@ void Player::play(const std::string &track, const int startTime, const int endTi
 		{"track", {{"encoded", track}}}};
 	update(trackData), noReplace;
 }
+
+void Player::pause() {
+	nlohmann::json data = {
+		{"paused", true}};
+	paused = true;
+	update(data);
+}
+
+void Player::resume() {
+	nlohmann::json data = {
+		{"paused", false}};
+	paused = false;
+	update(data);
+}
+
+void Player::stop() {
+	nlohmann::json data = {
+		{"track", {{"encoded", nullptr}}}};
+	update(data);
+}
+
+void Player::volume(const int volume) {
+	nlohmann::json data = {
+		{"volume", volume}};
+	volumeLevel = volume;
+	update(data);
+}
+
+void Player::seek(const int position) {
+	nlohmann::json data = {
+		{"position", position}};
+	this->position = position;
+	update(data);
+}

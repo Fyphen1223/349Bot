@@ -169,12 +169,32 @@ class Player {
 		trackExceptionCallbacks.clear();
 	}
 
+	void handleEvents(const nlohmann::json &raw);
+	void handleLavaLinkEvents(std::string data);
+	void connect();
+
 	nlohmann::json update(const nlohmann::json &data, const bool noReplace = false);
 
-	void handleEvents(const nlohmann::json &raw);
-	void connect();
 	void play(const std::string &track, const int startTime = 0, const int endTime = 0, const bool noReplace = false);
-	void handleLavaLinkEvents(std::string data);
+	void pause();
+	void resume();
+	void stop();
+	void seek(const int position);
+	void volume(const int volume);
+	//void destroy();
+
+	bool paused = false;
+	bool playing = false;
+	bool stuck = false;
+	bool ended = false;
+	bool closed = false;
+
+	bool connected = false;
+
+	int position = 0;
+	int volumeLevel = 100;
+	int ping = 0;
+
 
   private:
 	PlayerConfig config;
