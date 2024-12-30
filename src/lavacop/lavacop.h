@@ -18,7 +18,7 @@ class lavacop {
 	void setBotId(const std::string &id);
 	void setUserAgent(const std::string &agent);
 	LavaLink *getIdealNode();
-	void handleRaw(const nlohmann::json &raw);
+	void handleRawEvents(const std::string &raw);
 	void setSendPayload(const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload);
 
   private:

@@ -3,7 +3,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <dpp/dpp.h>
 #include <functional>
 #include <hv/WebSocketClient.h>
 #include <hv/requests.h>
@@ -96,9 +95,8 @@ class LavaLink {
 
 	nlohmann::json loadTracks(const std::string &identifier);
 
-	void join(const dpp::snowflake &guildId, const dpp::snowflake &channelId, const bool &selfDeaf = false, const bool &selfMute = false);
-	//void leave(const dpp::snowflake &guildId);
-
+	void join(const std::string &guildId, const std::string &channelId, const bool &selfDeaf = false, const bool &selfMute = false);
+	void leave(const std::string &guildId);
 
 	std::string url;
 	std::string fetchUrl;
@@ -124,9 +122,7 @@ class LavaLink {
 class Player {
   public:
 	Player() = default;
-	Player(const PlayerConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload, const std::string &guildId)
-		: config(config) {
-		  };
+	Player(const PlayerConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload, const std::string &guildId);
 	Player(Player &&other) noexcept;
 	Player &operator=(Player &&other) noexcept;
 	Player(const Player &) = delete;

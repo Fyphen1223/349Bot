@@ -31,10 +31,8 @@ void lavacop::setSendPayload(const std::function<void(const std::string &guildId
 	this->sendPayload = sendPayload;
 };
 
-void lavacop::handleRaw(const nlohmann::json &raw) {
-	if (raw["t"] == "VOICE_SERVER_UPDATE") {
-	} else if (raw["t"] == "VOICE_STATE_UPDATE") {
-	}
+void lavacop::handleRawEvents(const std::string &raw) {
+	printf("Raw event: %s\n", raw.c_str());
 }
 
 LavaLink *lavacop::getIdealNode() {

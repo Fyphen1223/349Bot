@@ -208,7 +208,7 @@ void LavaLink::connect() {
 	ws.onMessage([this](const std::string &msg) {
 		nlohmann::json data = nlohmann::json::parse(msg);
 		if (data["op"] == "ready") {
-			sessionId = data["sessionId"];
+			sessionId = data["sessionId"].get<std::string>();
 			emitReady();
 		}
 		emitMessage(msg);
@@ -258,19 +258,22 @@ nlohmann::json LavaLink::loadTracks(const std::string &identifier) {
 	return nlohmann::json::parse(resp->body);
 }
 
-void LavaLink::join(const dpp::snowflake &guildId, const dpp::snowflake &channelId, const bool &selfDeaf, const bool &selfMute) {
+void LavaLink::join(const std::string &guildId, const std::string &channelId, const bool &selfDeaf, const bool &selfMute) {
 	nlohmann::json payload = {
 		{"op", 4},
 		{"d", {{"guild_id", guildId}, {"channel_id", channelId}, {"self_mute", selfMute}, {"self_deaf", selfDeaf}}}};
 
 	std::string payload_str = payload.dump();
 	if (sendPayload) {
-		std::string guildIdStr = std::to_string(guildId);
-		sendPayload(guildIdStr, payload_str);
-		Players[guildIdStr] = Player(PlayerConfig{.sendPayload = sendPayload, .lavalink = this, .guildId = guildIdStr});
+		sendPayload(guildId, payload_str);
+		Players[guildId] = Player(PlayerConfig{.sendPayload = sendPayload, .lavalink = this, .guildId = guildId});
 	} else {
 		printf("sendPayload is not set.\n");
 	}
+}
+
+void LavaLink::leave(const std::string &guildId) {
+	//TODO
 }
 
 void LavaLink::setSendPayload(const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload) {

@@ -84,12 +84,10 @@ int main(int argc, char *argv[]) {
 		BH.sendPayload(guildId, payload);
 	});
 	bot.on_voice_state_update([&](const dpp::voice_state_update_t &event) {
-		const nlohmann::json raw = json::parse(event.raw_event);
-		LC.handleRaw(raw);
+		LC.handleRawEvents(event.raw_event);
 	});
 	bot.on_voice_server_update([&](const dpp::voice_server_update_t &event) {
-		const nlohmann::json raw = json::parse(event.raw_event);
-		LC.handleRaw(raw);
+		LC.handleRawEvents(event.raw_event);
 	});
 
 	bot.on_log(DiscordLogger);
@@ -114,11 +112,9 @@ int main(int argc, char *argv[]) {
 		LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .botId = botId});
 
 		std::this_thread::sleep_for(std::chrono::seconds(2));
-		const std::string guild_id_str = "919809544648020008";
-		dpp::snowflake guild_id = static_cast<dpp::snowflake>(std::stoull(guild_id_str));
-		const std::string channel_id_str = "919809544648020012";
-		dpp::snowflake channel_id = static_cast<dpp::snowflake>(std::stoull(channel_id_str));
-		LC.getIdealNode()->join(guild_id, channel_id, true, true);
+		const std::string guildId = "919809544648020008";
+		const std::string channelId = "919809544648020012";
+		LC.getIdealNode()->join(guildId, channelId, true, true);
 	});
 	bot.start(dpp::st_wait);
 	return 0;
