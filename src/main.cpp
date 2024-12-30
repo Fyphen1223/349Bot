@@ -79,14 +79,15 @@ int main(int argc, char *argv[]) {
 					 dpp::intents::i_all_intents);
 
 	BH.setBot(&bot);
+	LC.setBotId(config["bot"]["applicationId"]);
 
 	LC.setSendPayload([](const std::string &guildId, const std::string &payload) {
 		BH.sendPayload(guildId, payload);
 	});
-	bot.on_voice_state_update([&](const dpp::voice_state_update_t &event) {
+	bot.on_voice_server_update([&](const dpp::voice_server_update_t &event) {
 		LC.handleRawEvents(event.raw_event);
 	});
-	bot.on_voice_server_update([&](const dpp::voice_server_update_t &event) {
+	bot.on_voice_state_update([&](const dpp::voice_state_update_t &event) {
 		LC.handleRawEvents(event.raw_event);
 	});
 
@@ -106,15 +107,27 @@ int main(int argc, char *argv[]) {
 			registerSlashCommands(bot);
 
 		const std::string botId = config["bot"]["applicationId"];
-		const std::function<void(const std::string &, std::string &)> sendPayload = [](const std::string &guildId, std::string &payload) {
-			print("Payload sent to guild " + guildId + ": " + payload);
-		};
 		LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .botId = botId});
 
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		const std::string guildId = "1151287283367026828";
+		const std::string channelId = "1151287284075876371";
+
+		const auto Node = LC.getIdealNode();
+		if (!Node) {
+			error("No nodes available.");
+			return;
+		}
+		Node->join(guildId, channelId, true, true);
 		std::this_thread::sleep_for(std::chrono::seconds(2));
-		const std::string guildId = "919809544648020008";
-		const std::string channelId = "919809544648020012";
-		LC.getIdealNode()->join(guildId, channelId, true, true);
+		const nlohmann::json data = Node->loadTracks("ytsearch:Avicii wake me up");
+		const std::string track = data["data"][0]["encoded"];
+		auto &p = Node->getPlayer(guildId);
+		p.onTrackStart([&](const std::string &data) {
+			info("Track started.");
+			info(data);
+		});
+		p.play(track);
 	});
 	bot.start(dpp::st_wait);
 	return 0;

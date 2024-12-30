@@ -26,7 +26,7 @@ struct LavaLinkConfig {
 };
 
 struct PlayerConfig {
-	std::function<void(const std::string &guildId, std::string &payload)> sendPayload;
+	std::function<void(const std::string &guildId, const std::string &payload)> sendPayload;
 	LavaLink *lavalink;
 	std::string guildId;
 };
@@ -36,7 +36,6 @@ struct connectionInfo {
 	std::string endpoint;
 	std::string sessionId;
 };
-
 
 class WS {
   public:
@@ -98,6 +97,10 @@ class LavaLink {
 	void join(const std::string &guildId, const std::string &channelId, const bool &selfDeaf = false, const bool &selfMute = false);
 	void leave(const std::string &guildId);
 
+	void handleRaw(const nlohmann::json &raw);
+
+	Player &getPlayer(const std::string &guildId);
+
 	std::string url;
 	std::string fetchUrl;
 	std::string password;
@@ -122,14 +125,11 @@ class LavaLink {
 class Player {
   public:
 	Player() = default;
-	Player(const PlayerConfig &config, const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload, const std::string &guildId);
 	Player(Player &&other) noexcept;
 	Player &operator=(Player &&other) noexcept;
 	Player(const Player &) = delete;
 	Player &operator=(const Player &) = delete;
-	Player(const PlayerConfig &config)
-		: config(config) {
-	}
+	Player(const PlayerConfig &config);
 
 	void onState(const std::function<void(std::string data)> &callback) {
 		stateCallbacks.push_back(callback);
@@ -171,9 +171,14 @@ class Player {
 
 	nlohmann::json update(const nlohmann::json &data, const bool noReplace = false);
 
+	void handleEvents(const nlohmann::json &raw);
+	void connect();
+	void play(const std::string &track, const int startTime = 0, const int endTime = 0, const bool noReplace = false);
+	void handleLavaLinkEvents(std::string data);
+
   private:
 	PlayerConfig config;
-	LavaLink Node;
+	LavaLink *Node;
 	std::string guildId;
 
 	std::vector<std::function<void(std::string data)>> stateCallbacks;
@@ -185,6 +190,10 @@ class Player {
 	std::vector<std::function<void(std::string data)>> webSocketClosedCallbacks;
 
 	std::function<void(const std::string &guildId, const std::string &payload)> sendPayload;
+
+	std::string token;
+	std::string sessionId;
+	std::string endpoint;
 };
 
 

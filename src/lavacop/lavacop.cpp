@@ -32,7 +32,21 @@ void lavacop::setSendPayload(const std::function<void(const std::string &guildId
 };
 
 void lavacop::handleRawEvents(const std::string &raw) {
-	printf("Raw event: %s\n", raw.c_str());
+	const nlohmann::json data = nlohmann::json::parse(raw);
+	if (data["t"] == "VOICE_SERVER_UPDATE") {
+		for (auto &node: Nodes) {
+			node.handleRaw(data);
+		}
+	}
+	if (data["t"] == "VOICE_STATE_UPDATE") {
+		if (data["d"]["member"]["user"]["id"] != botId)
+			return;
+		if (data["d"]["channel_id"] == nullptr)
+			return;
+		for (auto &node: Nodes) {
+			node.handleRaw(data);
+		}
+	}
 }
 
 LavaLink *lavacop::getIdealNode() {
