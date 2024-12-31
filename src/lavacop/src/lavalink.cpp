@@ -54,6 +54,7 @@ void WS::open(const std::string &url, const http_headers &headers) {
 		}
 	};
 	ws.onmessage = [this](const std::string &msg) {
+		std::cout << msg << std::endl;
 		for (const auto &callback: on_message_callbacks) {
 			callback(msg);
 		}
@@ -216,6 +217,12 @@ void LavaLink::connect() {
 			emitReady();
 		}
 		if (data["op"] == "event") {
+			const std::string guildId = data["guildId"];
+			if (Players.find(guildId) != Players.end()) {
+				Players[guildId].handleLavaLinkEvents(msg);
+			}
+		}
+		if (data["op"] == "playerUpdate") {
 			const std::string guildId = data["guildId"];
 			if (Players.find(guildId) != Players.end()) {
 				Players[guildId].handleLavaLinkEvents(msg);
@@ -397,6 +404,48 @@ void Player::handleLavaLinkEvents(std::string data) {
 			}
 		}
 	}
+	if (raw["op"] == "playerUpdate") {
+		ping = raw["state"]["ping"].get<int>();
+		position = raw["state"]["position"].get<int>();
+		connected = raw["state"]["connected"].get<bool>();
+		for (auto &callback: playerUpdateCallbacks) {
+			callback(data);
+		}
+	}
+}
+
+void Player::get() {
+	if (Node->sessionId.empty()) {
+		printf("[lavacop:Player] sessionId is empty.\n");
+		return;
+	}
+	http_headers headers;
+	headers["Authorization"] = Node->password;
+	auto resp = requests::get((Node->fetchUrl + "/v4/sessions/" + Node->sessionId + "/players/" + this->guildId).c_str(), headers);
+	if (resp == nullptr) {
+		return;
+	}
+
+	nlohmann::json data = nlohmann::json::parse(resp->body);
+
+	std::cout << data.dump(4) << std::endl;
+	if (data["state"]["position"] != nullptr) {
+		position = data["state"]["position"].get<int>();
+	}
+	if (data["state"]["paused"] != nullptr) {
+		paused = data["state"]["paused"].get<bool>();
+	}
+	if (data["state"]["ping"] != nullptr) {
+		ping = data["state"]["ping"].get<int>();
+	}
+	if (data["track"] != nullptr) {
+		playing = true;
+	}
+	if (data["volume"] != nullptr) {
+		volumeLevel = data["state"]["volume"].get<int>();
+	}
+
+	return;
 }
 
 void Player::connect() {

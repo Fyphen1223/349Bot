@@ -8,6 +8,7 @@
 #include <hv/requests.h>
 #include <iostream>
 #include <map>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -172,6 +173,7 @@ class Player {
 	void handleEvents(const nlohmann::json &raw);
 	void handleLavaLinkEvents(std::string data);
 	void connect();
+	void get();
 
 	nlohmann::json update(const nlohmann::json &data, const bool noReplace = false);
 

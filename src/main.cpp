@@ -8,6 +8,7 @@
 #include <iostream>
 #include <thread>
 
+#include "events/autocomplete.h"
 #include "events/messageCreate.h"
 #include "events/slashcommandsCreate.h"
 #include "global.h"
@@ -98,6 +99,9 @@ int main(int argc, char *argv[]) {
 	bot.on_slashcommand([&](const dpp::slashcommand_t &event) {
 		onSlashCommands(bot, event);
 	});
+	bot.on_autocomplete([&](const dpp::autocomplete_t &event) {
+		onAutoComplete(bot, event);
+	});
 	bot.on_ready([&bot, shouldRegisterSlashCommands](const dpp::ready_t &event) {
 		info("Bot is ready.");
 
@@ -120,28 +124,18 @@ int main(int argc, char *argv[]) {
 		}
 		Node->join(guildId, channelId, true, true);
 		std::this_thread::sleep_for(std::chrono::seconds(2));
-		const nlohmann::json data = Node->loadTracks("ytsearch: ヒカキン");
+		const nlohmann::json data = Node->loadTracks("ytsearch: avicii wake me up");
 		const std::string track = data["data"][0]["encoded"];
 		auto &p = Node->getPlayer(guildId);
 		p.onTrackStart([&](const std::string &data) {
 			info("Track started.");
 			info(data);
 			p.volume(30);
-			/*
-			std::this_thread::sleep_for(std::chrono::seconds(2));
-			p.pause();
-			std::this_thread::sleep_for(std::chrono::seconds(2));
-			p.resume();
-			std::this_thread::sleep_for(std::chrono::seconds(2));
-			p.seek(30000);
-			std::this_thread::sleep_for(std::chrono::seconds(2));
-			p.volume(20);
-			std::this_thread::sleep_for(std::chrono::seconds(2));
-			p.stop();
-			*/
+			p.get();
 		});
 		p.play(track);
 	});
-	bot.start(dpp::st_wait);
+
+	bot.start(false);
 	return 0;
 }
