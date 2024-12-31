@@ -16,6 +16,8 @@
 #include "lib/log.h"
 #include "lib/print.h"
 #include "util/register.h"
+#include <hv/WebSocketClient.h>
+#include <hv/requests.h>
 
 using json = nlohmann::json;
 
@@ -112,7 +114,7 @@ int main(int argc, char *argv[]) {
 
 		const std::string botId = config["bot"]["applicationId"];
 		LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .botId = botId});
-
+		/*
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		const std::string guildId = "1151287283367026828";
 		const std::string channelId = "1151287284075876371";
@@ -123,17 +125,15 @@ int main(int argc, char *argv[]) {
 			return;
 		}
 		Node->join(guildId, channelId, true, true);
-		std::this_thread::sleep_for(std::chrono::seconds(2));
 		const nlohmann::json data = Node->loadTracks("ytsearch: avicii wake me up");
 		const std::string track = data["data"][0]["encoded"];
 		auto &p = Node->getPlayer(guildId);
 		p.onTrackStart([&](const std::string &data) {
 			info("Track started.");
-			info(data);
 			p.volume(30);
-			p.get();
 		});
 		p.play(track);
+		*/
 	});
 
 	bot.start(false);

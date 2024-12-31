@@ -35,7 +35,6 @@ class BotHandler {
 	dpp::cluster *bot;
 };
 
-
 extern BotHandler BH;
 
 #endif// GLOBAL_H

@@ -46,7 +46,6 @@ void WS::open(const std::string &url, const http_headers &headers) {
 	if (url.empty()) {
 		printf("[lavacop:WebSocket] WebSocket URL is empty\n");
 	}
-
 	ws.onopen = [this]() {
 		is_open = true;
 		for (const auto &callback: on_open_callbacks) {
@@ -54,7 +53,6 @@ void WS::open(const std::string &url, const http_headers &headers) {
 		}
 	};
 	ws.onmessage = [this](const std::string &msg) {
-		std::cout << msg << std::endl;
 		for (const auto &callback: on_message_callbacks) {
 			callback(msg);
 		}
@@ -263,9 +261,9 @@ nlohmann::json LavaLink::loadTracks(const std::string &identifier) {
 	if (resp == nullptr) {
 		return nlohmann::json();
 	}
+	//std::cout << resp->body << std::endl;
 	return nlohmann::json::parse(resp->body);
 }
-
 
 void LavaLink::join(const std::string &guildId, const std::string &channelId, const bool &selfDeaf, const bool &selfMute) {
 	nlohmann::json payload = {
@@ -300,7 +298,7 @@ Player &LavaLink::getPlayer(const std::string &guildId) {
 	if (Players.find(guildId) != Players.end()) {
 		return Players[guildId];
 	}
-	return Players[guildId];
+	throw std::runtime_error("Player not found for guildId: " + guildId);
 }
 
 
@@ -428,7 +426,6 @@ void Player::get() {
 
 	nlohmann::json data = nlohmann::json::parse(resp->body);
 
-	std::cout << data.dump(4) << std::endl;
 	if (data["state"]["position"] != nullptr) {
 		position = data["state"]["position"].get<int>();
 	}
@@ -436,13 +433,18 @@ void Player::get() {
 		paused = data["state"]["paused"].get<bool>();
 	}
 	if (data["state"]["ping"] != nullptr) {
-		ping = data["state"]["ping"].get<int>();
+		int p = data["state"]["ping"];
+		if (p == -1) {
+			ping = 0;
+		} else {
+			ping = p;
+		}
 	}
 	if (data["track"] != nullptr) {
 		playing = true;
 	}
 	if (data["volume"] != nullptr) {
-		volumeLevel = data["state"]["volume"].get<int>();
+		volumeLevel = data["volume"];
 	}
 
 	return;
