@@ -377,16 +377,19 @@ void Player::handleLavaLinkEvents(std::string data) {
 	nlohmann::json raw = nlohmann::json::parse(data);
 	if (raw["op"] == "event") {
 		if (raw["type"] == "TrackStartEvent") {
+			playing = true;
 			for (auto &callback: trackStartCallbacks) {
 				callback(data);
 			}
 		}
 		if (raw["type"] == "TrackEndEvent") {
+			playing = false;
 			for (auto &callback: trackEndCallbacks) {
 				callback(data);
 			}
 		}
 		if (raw["type"] == "TrackExceptionEvent") {
+			playing = false;
 			for (auto &callback: trackExceptionCallbacks) {
 				callback(data);
 			}
@@ -397,6 +400,7 @@ void Player::handleLavaLinkEvents(std::string data) {
 			}
 		}
 		if (raw["type"] == "WebSocketClosedEvent") {
+			playing = false;
 			for (auto &callback: webSocketClosedCallbacks) {
 				callback(data);
 			}

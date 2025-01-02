@@ -20,6 +20,7 @@ class lavacop {
 	LavaLink *getIdealNode();
 	void handleRawEvents(const std::string &raw);
 	void setSendPayload(const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload);
+	Player *getPlayer(const std::string &guildId);
 
   private:
 	std::string botId;

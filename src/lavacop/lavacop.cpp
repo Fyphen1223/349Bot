@@ -56,3 +56,17 @@ LavaLink *lavacop::getIdealNode() {
 	}
 	return &Nodes[0];
 }
+
+Player *lavacop::getPlayer(const std::string &guildId) {
+	if (Nodes.empty()) {
+		throw std::runtime_error("No nodes available");
+	}
+	for (auto &node: Nodes) {
+		try {
+			return &node.getPlayer(guildId);
+		} catch (std::runtime_error &e) {
+			continue;
+		}
+	}
+	throw std::runtime_error("Player not found for guildId: " + guildId);
+}
