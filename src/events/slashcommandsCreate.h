@@ -6,5 +6,6 @@
 #include <iostream>
 
 void onSlashCommands(dpp::cluster &bot, const dpp::slashcommand_t &event);
+std::string getRestPing(dpp::cluster &bot);
 
 #endif// SLASHCOMMANDCREATE_H

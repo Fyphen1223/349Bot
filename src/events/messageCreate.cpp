@@ -1,6 +1,6 @@
 #include "messageCreate.h"
 
-void onMessageCreate(dpp::cluster &bot, const dpp::message_create_t &event /*, lavacop &LC*/) {
+void onMessageCreate(dpp::cluster &bot, const dpp::message_create_t &event) {
 	const std::string &content = event.msg.content;
 	if (event.msg.author.is_bot())
 		return;

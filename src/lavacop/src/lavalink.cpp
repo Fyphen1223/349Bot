@@ -349,6 +349,7 @@ nlohmann::json Player::update(const nlohmann::json &data, const bool noReplace) 
 	}
 	http_headers headers;
 	headers["Authorization"] = Node->password;
+	headers["Content-Type"] = "application/json";
 
 	const std::string d = data.dump();
 	auto resp = requests::patch((Node->fetchUrl + "/v4/sessions/" + Node->sessionId + "/players/" + this->guildId + "?noReplace=" + (noReplace ? "true" : "false")).c_str(), d, headers);
@@ -423,6 +424,7 @@ void Player::get() {
 	}
 	http_headers headers;
 	headers["Authorization"] = Node->password;
+	headers["Content-Type"] = "application/json";
 	auto resp = requests::get((Node->fetchUrl + "/v4/sessions/" + Node->sessionId + "/players/" + this->guildId).c_str(), headers);
 	if (resp == nullptr) {
 		return;

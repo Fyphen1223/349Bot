@@ -66,6 +66,9 @@ void executePlay(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 		// search
 	} else if (loadType == "error") {
 		event.edit_response("An error occurred while trying to load the track.");
+	} else if (loadType == "playlist" || loadType == "album" || loadType == "artist" || loadType == "station" || loadType == "podcast" || loadType == "show") {
+		std::cout << track.dump() << std::endl;
+		// playlist
 	}
 
 	GQ.add(std::to_string(event.command.get_guild().id));
@@ -78,7 +81,7 @@ void executePlay(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 
 	GQ.queue[guildId].add(track[0].dump());
 
-	event.edit_response("Playing: " + query);
+	event.edit_response(query + " has been loaded.");
 	try {
 		nlohmann::json t = GQ.queue[guildId].getNextTrack();
 		LC.getPlayer(std::to_string(event.command.get_guild().id))->play(t["encoded"]);
@@ -128,6 +131,7 @@ void executeSeek(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 
 
 void onSlashCommands(dpp::cluster &bot, const dpp::slashcommand_t &event) {
+	std::cout << "Slash command received: " << event.command.get_command_name() << std::endl;
 	const std::string commandName = event.command.get_command_name();
 
 	if (commandName == "ping") {

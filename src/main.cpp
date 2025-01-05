@@ -113,8 +113,29 @@ int main(int argc, char *argv[]) {
 			registerSlashCommands(bot);
 
 		const std::string botId = config["bot"]["applicationId"];
-		LC.addNode(LavaLinkConfig{.ip = "localhost", .port = "2333", .secure = false, .password = "youshallnotpass", .serverName = "default", .userAgent = "LavaCop/0.0.1", .botId = botId});
+
+		const std::vector<json> jsonNodes = config["lavalink"];
+
+		for (const auto &node: jsonNodes) {
+			LC.addNode(LavaLinkConfig{
+				.ip = node["ip"].get<std::string>(),
+				.port = node["port"].get<std::string>(),
+				.secure = node["secure"].get<bool>(),
+				.password = node["password"].get<std::string>(),
+				.serverName = "default",
+				.userAgent = "LavaCop/0.0.1",
+				.botId = botId});
+		}
+
+
+		std::thread([&bot]() {
+			while (true) {
+				info("Ping: " + getRestPing(bot));
+				std::this_thread::sleep_for(std::chrono::seconds(config["log"]["reportFrequency"].get<int>()));
+			}
+		}).detach();
 		/*
+		return;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		const std::string guildId = "1151287283367026828";
 		const std::string channelId = "1151287284075876371";
