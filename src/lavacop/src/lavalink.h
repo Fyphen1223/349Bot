@@ -170,6 +170,13 @@ class Player {
 		trackExceptionCallbacks.clear();
 	}
 
+	bool isNoEventListenerSet() {
+		if (stateCallbacks.empty() && playerUpdateCallbacks.empty() && trackStartCallbacks.empty() && trackEndCallbacks.empty() && trackExceptionCallbacks.empty() && trackStuckCallbacks.empty() && webSocketClosedCallbacks.empty()) {
+			return true;
+		}
+		return false;
+	}
+
 	void handleEvents(const nlohmann::json &raw);
 	void handleLavaLinkEvents(std::string data);
 	void connect();

@@ -1,5 +1,7 @@
 #include "slashcommandsCreate.h"
 #include "../global.h"
+#include "../lavacop/lavacop.h"
+#include "../lavacop/src/lavalink.h"
 #include <dpp/dpp.h>
 #include <iostream>
 
@@ -26,6 +28,12 @@ std::string getUserVoiceChannel(const dpp::slashcommand_t &event) {
 	return "";
 }
 
+void handlePlayerEventsOnDiscord(Player &player) {
+	player.onTrackStart([](std::string data) {
+		std::cout << "Track started: " << data << std::endl;
+	});
+}
+
 void executePing(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 	event.reply("Pong! REST Ping: " + getRestPing(bot));
 }
@@ -34,21 +42,39 @@ void executePlay(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 	const std::string query = std::get<std::string>(event.get_parameter("query"));
 	const std::string guildId = std::to_string(event.command.get_guild().id);
 
+	GQ.add(std::to_string(event.command.get_guild().id));
 	if (getUserVoiceChannel(event).empty()) {
 		event.reply("You need to be in a voice channel to use this command.");
 		return;
 	}
+
 
 	if (query.empty()) {
 		event.reply("Please provide a query.");
 		return;
 	}
 
-	event.thinking(false);
+	std::thread([event]() {
+		event.thinking(false);
+	}).detach();
 
-	auto node = LC.getIdealNode();
+	LavaLink *node = LC.getIdealNode();
+	try {
+		LC.getPlayer(std::to_string(event.command.get_guild().id));
+		if (GQ.queue[guildId].voiceChannelId != getUserVoiceChannel(event)) {
+			GQ.queue[guildId].voiceChannelId = getUserVoiceChannel(event);
+			node->join(std::to_string(event.command.get_guild().id), getUserVoiceChannel(event), false, false);
+		}
+	} catch (std::runtime_error &e) {
+		GQ.queue[guildId].voiceChannelId = getUserVoiceChannel(event);
+		node->join(std::to_string(event.command.get_guild().id), getUserVoiceChannel(event), false, false);
+		handlePlayerEventsOnDiscord(node->getPlayer(std::to_string(event.command.get_guild().id)));
+	}
+
+	GQ.queue[guildId].voiceChannelId = getUserVoiceChannel(event);
+	//Joijns the voice channel
+
 	auto track = node->loadTracks(query);
-
 	std::string loadType = track["loadType"];
 
 	if (loadType == "track" || loadType == "short") {
@@ -71,12 +97,8 @@ void executePlay(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 		// playlist
 	}
 
-	GQ.add(std::to_string(event.command.get_guild().id));
-
-	try {
-		node->getPlayer(std::to_string(event.command.get_guild().id));
-	} catch (std::runtime_error &e) {
-		node->join(std::to_string(event.command.get_guild().id), getUserVoiceChannel(event), false, false);
+	if (node->getPlayer(std::to_string(event.command.get_guild().id)).isNoEventListenerSet()) {
+		handlePlayerEventsOnDiscord(node->getPlayer(std::to_string(event.command.get_guild().id)));
 	}
 
 	GQ.queue[guildId].add(track[0].dump());
@@ -128,7 +150,6 @@ void executeLyrics(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 
 void executeSeek(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 }
-
 
 void onSlashCommands(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 	std::cout << "Slash command received: " << event.command.get_command_name() << std::endl;
