@@ -3,9 +3,12 @@
 #include "../lavacop/lavacop.h"
 #include "../lavacop/src/lavalink.h"
 #include <dpp/dpp.h>
+#include <functional>
 #include <iostream>
+#include <map>
 
 #include "../commands/ping.h"
+#include "commands.h"
 
 std::string getUserVoiceChannel(const dpp::slashcommand_t &event) {
 	dpp::snowflake user_id = event.command.usr.id;
@@ -105,14 +108,12 @@ void executePlay(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 	}
 }
 
-
 void onSlashCommands(dpp::cluster &bot, const dpp::slashcommand_t &event) {
-	std::cout << "Slash command received: " << event.command.get_command_name() << std::endl;
 	const std::string commandName = event.command.get_command_name();
 
-	if (commandName == "ping") {
-		Ping(bot, event);
-	} else if (commandName == "play") {
-		executePlay(bot, event);
+	if (Commands.find(commandName) != Commands.end()) {
+		Commands[commandName](bot, event);
+	} else {
+		event.reply("Command not found.");
 	}
 }

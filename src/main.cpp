@@ -9,6 +9,7 @@
 #include <thread>
 
 #include "events/autocomplete.h"
+#include "events/commands.h"
 #include "events/messageCreate.h"
 #include "events/slashcommandsCreate.h"
 #include "global.h"
@@ -112,6 +113,7 @@ int main(int argc, char *argv[]) {
 		if (shouldRegisterSlashCommands)
 			registerSlashCommands(bot);
 
+		initializeCommands();
 		const std::string botId = config["bot"]["applicationId"];
 
 		const std::vector<json> jsonNodes = config["lavalink"];

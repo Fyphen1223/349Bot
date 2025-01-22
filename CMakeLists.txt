@@ -37,6 +37,8 @@ add_executable(${PROJECT_NAME}
 	src/lavacop/src/lavalink.cpp
 	src/global.cpp
 	src/events/autocomplete.cpp
+	src/events/commands.cpp
+	src/commands/ping.cpp
 )
 
 # add_library(math_utils OBJECT src/lib/math_utils.cppm)
