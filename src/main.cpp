@@ -16,7 +16,10 @@
 #include "lavacop/lavacop.h"
 #include "lib/log.h"
 #include "lib/print.h"
+#include "util/decoration.h"
+#include "util/device.h"
 #include "util/register.h"
+#include "util/textcommands.h"
 #include <hv/WebSocketClient.h>
 #include <hv/requests.h>
 
@@ -112,10 +115,8 @@ int main(int argc, char *argv[]) {
 		LC.setUserAgent("LavaCop/0.0.1");
 		if (shouldRegisterSlashCommands)
 			registerSlashCommands(bot);
-
 		initializeCommands();
 		const std::string botId = config["bot"]["applicationId"];
-
 		const std::vector<json> jsonNodes = config["lavalink"];
 
 		for (const auto &node: jsonNodes) {
@@ -129,35 +130,51 @@ int main(int argc, char *argv[]) {
 				.botId = botId});
 		}
 
-
+		if (LC.Nodes.empty()) {
+			error("No nodes available.");
+			if (!config["bot"]["forceBoot"].get<bool>()) {
+				bot.shutdown();
+				error("No nodes available.");
+				return;
+			}
+			info("forceBoot option is enabled.");
+			info("Bot will continue to run without nodes.");
+			warn("This is not recommended.");
+			warn("Bot will not be able to handle music commands.");
+		}
 		std::thread([&bot]() {
 			while (true) {
+				info("----------------------------------------");
+				info("Bot is running.");
 				info("Ping: " + getRestPing(bot));
+				info("Machine Uptime: " + getUptime());
+				info("----------------------------------------");
 				std::this_thread::sleep_for(std::chrono::seconds(config["log"]["reportFrequency"].get<int>()));
 			}
 		}).detach();
-		/*
-		return;
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-		const std::string guildId = "1151287283367026828";
-		const std::string channelId = "1151287284075876371";
-
-		const auto Node = LC.getIdealNode();
-		if (!Node) {
-			error("No nodes available.");
-			return;
-		}
-		Node->join(guildId, channelId, true, true);
-		const nlohmann::json data = Node->loadTracks("ytsearch: avicii wake me up");
-		const std::string track = data["data"][0]["encoded"];
-		auto &p = Node->getPlayer(guildId);
-		p.onTrackStart([&](const std::string &data) {
-			info("Track started.");
-			p.volume(30);
-		});
-		p.play(track);
-		*/
 	});
+	info("----------------------------------------");
+	info("Device Information:");
+	info("OS: " + getOS());
+	info("CPU: " + getCPU());
+	info("RAM: " + getRAM());
+	info("Disk: " + getDisk());
+	info("Kernel: " + getKernel());
+	info("Uptime: " + getUptime());
+	info("Hostname: " + getHostname());
+	info("IP: " + getIP());
+	info("----------------------------------------");
+
+	info("Commands are being accepted.");
+	std::thread([&bot]() {
+		std::string input;
+		while (true) {
+			std::getline(std::cin, input);
+			if (!input.empty()) {
+				handleCLICommand(input);
+			}
+		}
+	}).detach();
 
 	bot.start(false);
 	return 0;

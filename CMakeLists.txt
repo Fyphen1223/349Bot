@@ -31,6 +31,9 @@ add_executable(${PROJECT_NAME}
 	src/lib/print.cpp
 	src/lib/log.cpp
 	src/util/register.cpp
+	src/util/device.cpp
+	src/util/decoration.cpp
+	src/util/textcommands.cpp
 	src/events/messageCreate.cpp
 	src/events/slashcommandsCreate.cpp
 	src/lavacop/lavacop.cpp

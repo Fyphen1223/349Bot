@@ -1,4 +1,5 @@
 #include "log.h"
+#include "../global.h"
 #include "print.h"
 #include <iostream>
 
@@ -22,9 +23,21 @@ const std::string BG_WHITE = "\033[47m";
 std::string getCurrentTime() {
 	auto now = std::chrono::system_clock::now();
 	auto in_time_t = std::chrono::system_clock::to_time_t(now);
+	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
 	std::stringstream ss;
-	ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+	ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X") << '.' << std::setfill('0') << std::setw(3) << ms.count();
+
+	// Get timezone offset
+	std::time_t t = std::time(nullptr);
+	std::tm local_tm = *std::localtime(&t);
+	std::tm utc_tm = *std::gmtime(&t);
+	int offset = local_tm.tm_hour - utc_tm.tm_hour;
+	if (local_tm.tm_yday != utc_tm.tm_yday) {
+		offset += (local_tm.tm_yday > utc_tm.tm_yday) ? 24 : -24;
+	}
+
+	ss << " UTC" << (offset >= 0 ? "+" : "") << offset;
 	return ss.str();
 }
 
