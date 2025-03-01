@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
 		error("Invalid log level. Defaulting to 2.");
 	}
 	setLogLevel(configLogLevel);
+	setLogDirectory(config["log"]["directory"]);
 
 	bool shouldRegisterSlashCommands = false;
 	for (int i = 0; i < argc; ++i) {

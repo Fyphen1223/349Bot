@@ -1,6 +1,7 @@
 #include "log.h"
 #include "../global.h"
 #include "print.h"
+#include <filesystem>
 #include <iostream>
 
 const std::string RESET = "\033[0m";
@@ -19,6 +20,12 @@ const std::string BG_BLUE = "\033[44m";
 const std::string BG_MAGENTA = "\033[45m";
 const std::string BG_CYAN = "\033[46m";
 const std::string BG_WHITE = "\033[47m";
+
+std::string logDirectory = "logs";
+
+void setLogDirectory(const std::string &directory) {
+	logDirectory = directory;
+}
 
 std::string getCurrentTime() {
 	auto now = std::chrono::system_clock::now();
@@ -47,39 +54,67 @@ std::string getFormattedTime() {
 
 int logLevel = 2;
 
+void writeLog(const std::string &message) {
+	if (!std::filesystem::exists(logDirectory)) {
+		std::filesystem::create_directories(logDirectory);
+	}
+	std::string logPath = logDirectory + "/log.txt";
+	std::ofstream logFile(logPath, std::ios::app);
+	if (logFile.is_open()) {
+		logFile << message << std::endl;
+		logFile.close();
+	} else {
+		std::cerr << "Failed to open log file: " << logPath << std::endl;
+	}
+	return;
+}
+
 void error(const std::string &message) {
-	if (4 >= logLevel)
+	if (4 >= logLevel) {
 		print(BG_RED + "[ERROR]" + RESET + getFormattedTime() + ": " + message);
+		writeLog("[ERROR]" + getFormattedTime() + ": " + message);
+	}
+
 	return;
 }
 
 void warn(const std::string &message) {
-	if (3 >= logLevel)
+	if (3 >= logLevel) {
 		print(BG_YELLOW + "[WARN ]" + RESET + getFormattedTime() + ": " + message);
+		writeLog("[WARN ]" + getFormattedTime() + ": " + message);
+	}
 	return;
 }
 
 void info(const std::string &message) {
-	if (2 >= logLevel)
+	if (2 >= logLevel) {
 		print(BG_BLUE + "[INFO ]" + RESET + getFormattedTime() + ": " + message);
+		writeLog("[INFO ]" + getFormattedTime() + ": " + message);
+	}
 	return;
 }
 
 void logDebug(const std::string &message) {
-	if (1 >= logLevel)
+	if (1 >= logLevel) {
 		print(BG_GREEN + "[DEBUG]" + RESET + getFormattedTime() + ": " + message);
+		writeLog("[DEBUG]" + getFormattedTime() + ": " + message);
+	}
 	return;
 }
 
 void logTrace(const std::string &message) {
-	if (0 >= logLevel)
+	if (0 >= logLevel) {
 		print(BG_CYAN + "[TRACE]" + RESET + getFormattedTime() + ": " + message);
+		writeLog("[TRACE]" + getFormattedTime() + ": " + message);
+	}
 	return;
 }
 
 void logCritical(const std::string &message) {
-	if (5 >= logLevel)
+	if (5 >= logLevel) {
 		print(BG_MAGENTA + "[CRITICAL]" + RESET + getFormattedTime() + ": " + message);
+		writeLog("[CRITICAL]" + getFormattedTime() + ": " + message);
+	}
 	return;
 }
 
