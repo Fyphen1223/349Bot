@@ -29,6 +29,13 @@ std::ifstream rawConfig("./config.json");
 
 json config;
 
+std::string logo = R"(
+ _____ _  _   ___  ____        _   
+|___ /| || | / _ \| __ )  ___ | |_ 
+  |_ \| || || (_) |  _ \ / _ \| __|
+ ___) |__   _\__, | |_) | (_) | |_ 
+|____/   |_|   /_/|____/ \___/ \__|
+)";
 
 bool isValidConfig(const json &data) {
 	if (data.contains("bot") && data["bot"].contains("token") && data["bot"].contains("applicationId") && data.contains("log") && data["log"].contains("level") && data["log"]["level"].is_number()) {
@@ -64,6 +71,8 @@ int main(int argc, char *argv[]) {
 	}
 	setLogLevel(configLogLevel);
 	setLogDirectory(config["log"]["directory"]);
+	setMaxLogFiles(config["log"]["maxLogFiles"]);
+	initiateLog();
 
 	bool shouldRegisterSlashCommands = false;
 	for (int i = 0; i < argc; ++i) {
@@ -176,7 +185,8 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}).detach();
-
+	std::cout << std::endl
+			  << logo << std::endl;
 	bot.start(false);
 	return 0;
 }

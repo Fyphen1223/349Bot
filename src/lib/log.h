@@ -15,5 +15,7 @@ void logUnknown(const std::string &message);
 void DiscordLogger(const dpp::log_t &log);
 void setLogLevel(int level);
 void setLogDirectory(const std::string &directory);
+void initiateLog();
+void setMaxLogFiles(int max);
 
 #endif// LOGGER_H

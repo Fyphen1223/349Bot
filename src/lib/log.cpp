@@ -69,6 +69,88 @@ void writeLog(const std::string &message) {
 	return;
 }
 
+int maxLogFiles = 10;// Default to keeping 10 log files
+
+void setMaxLogFiles(int max) {
+	maxLogFiles = max;
+}
+
+void initiateLog() {
+	// Ensure log directory exists
+	if (!std::filesystem::exists(logDirectory)) {
+		std::filesystem::create_directories(logDirectory);
+	}
+
+	std::string logPath = logDirectory + "/log.txt";
+	bool oldLogExists = std::filesystem::exists(logPath);
+
+	// If old log file exists, rename it using its first line timestamp
+	if (oldLogExists) {
+		std::ifstream oldLog(logPath);
+		if (oldLog.is_open()) {
+			std::string timestamp;
+			std::getline(oldLog, timestamp);// First line contains the timestamp
+			oldLog.close();
+
+			// Clean up timestamp for filename
+			std::string cleanTimestamp = timestamp;
+			for (char &c: cleanTimestamp) {
+				if (c == ':' || c == ' ' || c == '.' || c == '+' || c == '-') {
+					c = '_';
+				}
+			}
+
+			std::string newLogName = logDirectory + "/log_" + cleanTimestamp + ".txt";
+			try {
+				std::filesystem::rename(logPath, newLogName);
+			} catch (const std::filesystem::filesystem_error &e) {
+				std::cerr << "Failed to rename log file: " << e.what() << std::endl;
+			}
+		}
+	}
+
+	// Check the number of log files and delete oldest if necessary
+	if (maxLogFiles > 0) {
+		std::vector<std::filesystem::path> logFiles;
+
+		// Get all log files except the current log.txt
+		for (const auto &entry: std::filesystem::directory_iterator(logDirectory)) {
+			if (entry.path().filename() != "log.txt" && entry.path().extension() == ".txt") {
+				logFiles.push_back(entry.path());
+			}
+		}
+
+		// If more than maxLogFiles log files exist, delete oldest
+		if (logFiles.size() >= maxLogFiles) {
+			// Sort files by last modification time
+			std::sort(logFiles.begin(), logFiles.end(),
+					  [](const std::filesystem::path &a, const std::filesystem::path &b) {
+						  return std::filesystem::last_write_time(a) < std::filesystem::last_write_time(b);
+					  });
+
+			// Delete oldest files until we're under the limit
+			size_t numToDelete = logFiles.size() - maxLogFiles + 1;// +1 for new log
+			for (size_t i = 0; i < numToDelete; ++i) {
+				try {
+					std::filesystem::remove(logFiles[i]);
+				} catch (const std::filesystem::filesystem_error &e) {
+					std::cerr << "Failed to delete old log file: " << e.what() << std::endl;
+				}
+			}
+		}
+	}
+
+	// Create new log file with current timestamp
+	std::ofstream logFile(logPath, std::ios::out);
+	if (logFile.is_open()) {
+		logFile << getCurrentTime() << std::endl;
+		logFile.close();
+	} else {
+		std::cerr << "Failed to open log file: " << logPath << std::endl;
+	}
+	return;
+}
+
 void error(const std::string &message) {
 	if (4 >= logLevel) {
 		print(BG_RED + "[ERROR]" + RESET + getFormattedTime() + ": " + message);

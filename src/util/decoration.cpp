@@ -1,4 +1,10 @@
 #include "decoration.h"
+#include <cctype>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 void beautifulLine(int width = 50, char symbol = '*', int speed_ms = 30, bool colorful = true) {
 	const std::string colors[] = {
