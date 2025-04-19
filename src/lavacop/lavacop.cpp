@@ -1,5 +1,5 @@
 #include "lavacop.h"
-
+#include <memory>// Include for std::unique_ptr
 
 lavacop::lavacop() {
 }
@@ -9,13 +9,19 @@ void lavacop::purge() {
 }
 
 void lavacop::addNode(const LavaLinkConfig &config) {
-	LavaLink node(config, sendPayload);
 	std::lock_guard<std::mutex> lock(mutex);
-	if (node.isReachable()) {
-		Nodes.push_back(std::move(node));
-		Nodes.back().connect();
+	// Create a new LavaLink object using std::make_unique
+	Nodes.push_back(std::make_unique<LavaLink>(config, sendPayload));
+
+	std::cout << Nodes.size() << std::endl;
+
+	// Get a raw pointer to the newly added LavaLink object
+	LavaLink *newNode = Nodes.back().get();
+	if (newNode->isReachable()) {// Access members using ->
+		newNode->connect();		 // Access members using ->
 	} else {
 		std::cerr << "[lavacop:lavalink] Could not reach to the node." << std::endl;
+		Nodes.pop_back();// Remove the node if unreachable
 	}
 }
 
@@ -34,8 +40,9 @@ void lavacop::setSendPayload(const std::function<void(const std::string &guildId
 void lavacop::handleRawEvents(const std::string &raw) {
 	const nlohmann::json data = nlohmann::json::parse(raw);
 	if (data["t"] == "VOICE_SERVER_UPDATE") {
-		for (auto &node: Nodes) {
-			node.handleRaw(data);
+		// Iterate through unique_ptrs and access objects via ->
+		for (auto &nodePtr: Nodes) {
+			nodePtr->handleRaw(data);
 		}
 	}
 	if (data["t"] == "VOICE_STATE_UPDATE") {
@@ -43,8 +50,9 @@ void lavacop::handleRawEvents(const std::string &raw) {
 			return;
 		if (data["d"]["channel_id"] == nullptr)
 			return;
-		for (auto &node: Nodes) {
-			node.handleRaw(data);
+		// Iterate through unique_ptrs and access objects via ->
+		for (auto &nodePtr: Nodes) {
+			nodePtr->handleRaw(data);
 		}
 	}
 }
@@ -54,16 +62,19 @@ LavaLink *lavacop::getIdealNode() {
 		std::cerr << "No nodes available" << std::endl;
 		return nullptr;
 	}
-	return &Nodes[0];
+	// Return a raw pointer from the unique_ptr
+	return Nodes[0].get();
 }
 
 Player *lavacop::getPlayer(const std::string &guildId) {
 	if (Nodes.empty()) {
 		throw std::runtime_error("No nodes available");
 	}
-	for (auto &node: Nodes) {
+	// Iterate through unique_ptrs and access objects via ->
+	for (auto &nodePtr: Nodes) {
 		try {
-			return &node.getPlayer(guildId);
+			// Access getPlayer via ->
+			return &nodePtr->getPlayer(guildId);
 		} catch (std::runtime_error &e) {
 			continue;
 		}

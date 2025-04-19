@@ -3,6 +3,7 @@
 
 #include "../global.h"
 #include "../lavacop/lavacop.h"
+#include "../lib/log.h"
 #include <dpp/dpp.h>
 #include <nlohmann/json.hpp>
 

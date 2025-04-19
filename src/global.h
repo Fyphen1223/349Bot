@@ -73,9 +73,9 @@ class guildQueue {
 
 	nlohmann::json getNextTrack() {
 		if (queue.empty()) {
-			throw std::runtime_error("No tracks available");
+			return nullptr;
 		}
-		return nlohmann::json::parse(queue[0]);
+		return nlohmann::json::parse(queue[index + 1]);
 	}
 
 	std::vector<std::string> queue;
@@ -85,6 +85,8 @@ class guildQueue {
 	std::string voiceChannelId;
 	std::string lastMessageId;
 	std::string lastMessage;
+
+	int index = 0;
 
   private:
 };

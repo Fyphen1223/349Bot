@@ -201,6 +201,7 @@ void LavaLink::emitMessage(const std::string &msg) {
 }
 
 void LavaLink::connect() {
+	std::cout << url << std::endl;
 	http_headers headers;
 	headers["Authorization"] = password;
 	headers["User-Id"] = botId;
@@ -209,6 +210,7 @@ void LavaLink::connect() {
 		emitClose();
 	});
 	ws.onMessage([this](const std::string &msg) {
+		std::cout << url << msg << std::endl;
 		nlohmann::json data = nlohmann::json::parse(msg);
 		if (data["op"] == "ready") {
 			sessionId = data["sessionId"].get<std::string>();
@@ -250,7 +252,6 @@ std::string urlEncode(const std::string &value) {
 			escaped << '%' << std::setw(2) << int((unsigned char) c);
 		}
 	}
-
 	return escaped.str();
 }
 

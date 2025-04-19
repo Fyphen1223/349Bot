@@ -6,6 +6,7 @@
 #include <functional>
 #include <iostream>
 #include <map>
+#include <memory>// Include for std::unique_ptr
 #include <mutex>
 #include <nlohmann/json.hpp>
 #include <vector>
@@ -22,7 +23,7 @@ class lavacop {
 	void setSendPayload(const std::function<void(const std::string &guildId, const std::string &payload)> &sendPayload);
 	Player *getPlayer(const std::string &guildId);
 
-	std::vector<LavaLink> Nodes;
+	std::vector<std::unique_ptr<LavaLink>> Nodes;// Use unique_ptr
 
   private:
 	std::string botId;

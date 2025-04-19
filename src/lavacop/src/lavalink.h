@@ -41,6 +41,7 @@ struct connectionInfo {
 class WS {
   public:
 	WS();
+
 	void open(const std::string &url, const http_headers &headers = {});
 	void setPingInterval(int interval);
 	void send(const std::string &msg);
