@@ -112,6 +112,8 @@ class Queue {
 	std::map<std::string, guildQueue> queue;
 
   private:
+	std::string key;
+	std::string value;
 };
 
 extern Queue GQ;

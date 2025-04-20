@@ -36,3 +36,4 @@ vcpkg/*
 build/*
 windows/*
 websocketpp/*
+build-ninja/*

@@ -10,6 +10,25 @@ void handlePlayerEventsOnDiscord(Player &player, const std::string &guildId) {
 		msg.guild_id = dpp::snowflake(guildId);
 		BH.bot->message_create(msg, [guildId](const dpp::confirmation_callback_t &event) {});
 	});
+	player.onTrackEnd([guildId](std::string data) {
+		dpp::message msg;
+		msg.content = "Track ended: " + data;
+		msg.channel_id = GQ.queue[guildId].textChannelId;
+		msg.guild_id = dpp::snowflake(guildId);
+		BH.bot->message_create(msg, [guildId](const dpp::confirmation_callback_t &event) {});
+
+		if (GQ.queue[guildId].queue.size() > 0) {
+			nlohmann::json t = GQ.queue[guildId].getNextTrack();
+			auto p = LC.getPlayer(guildId);
+			p->play(t["encoded"]);
+		} else {
+			dpp::message msg;
+			msg.content = "Queue is empty.";
+			msg.channel_id = GQ.queue[guildId].textChannelId;
+			msg.guild_id = dpp::snowflake(guildId);
+			BH.bot->message_create(msg, [guildId](const dpp::confirmation_callback_t &event) {});
+		}
+	});
 }
 
 std::string getUserVoiceChannel(const dpp::slashcommand_t &event) {
@@ -111,6 +130,7 @@ void Play(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 	} else {
 		event.edit_original_response(dpp::message("No tracks found."));
 	}
+
 
 	return;
 }
