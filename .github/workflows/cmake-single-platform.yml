@@ -19,7 +19,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake git
+        sudo apt-get install -y build-essential cmake git libssl-dev zlib1g-dev libopus-dev
 
     - name: Install dpp
       run: |
