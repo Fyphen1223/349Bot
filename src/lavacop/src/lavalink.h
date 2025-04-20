@@ -205,12 +205,6 @@ class Player {
 	int volumeLevel = 100;
 	int ping = 0;
 
-
-  private:
-	PlayerConfig config;
-	LavaLink *Node;
-	std::string guildId;
-
 	std::vector<std::function<void(std::string data)>> stateCallbacks;
 	std::vector<std::function<void(std::string data)>> playerUpdateCallbacks;
 	std::vector<std::function<void(std::string data)>> trackStartCallbacks;
@@ -218,6 +212,12 @@ class Player {
 	std::vector<std::function<void(std::string data)>> trackExceptionCallbacks;
 	std::vector<std::function<void(std::string data)>> trackStuckCallbacks;
 	std::vector<std::function<void(std::string data)>> webSocketClosedCallbacks;
+
+	std::string guildId;
+
+  private:
+	PlayerConfig config;
+	LavaLink *Node;
 
 	std::function<void(const std::string &guildId, const std::string &payload)> sendPayload;
 

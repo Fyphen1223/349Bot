@@ -42,6 +42,7 @@ add_executable(${PROJECT_NAME}
 	src/events/autocomplete.cpp
 	src/events/commands.cpp
 	src/commands/ping.cpp
+	src/commands/play.cpp
 )
 
 # add_library(math_utils OBJECT src/lib/math_utils.cppm)

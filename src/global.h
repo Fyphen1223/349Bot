@@ -2,6 +2,7 @@
 #define GLOBAL_H
 
 #include "lavacop/lavacop.h"
+#include "nlohmann/json.hpp"
 #include <iostream>
 
 extern lavacop LC;
@@ -31,8 +32,9 @@ class BotHandler {
 		});
 	}
 
-  private:
 	dpp::cluster *bot;
+
+  private:
 };
 
 extern BotHandler BH;
@@ -47,20 +49,16 @@ class guildQueue {
 	guildQueue(const guildQueue &) = delete;
 	guildQueue &operator=(const guildQueue &) = delete;
 
-	void add(const std::string &track) {
+	void add(const nlohmann::json &track) {
 		queue.push_back(track);
 	}
 
-	void remove(const std::string &track) {
+	void remove(const nlohmann::json &track) {
 		queue.erase(std::remove(queue.begin(), queue.end(), track), queue.end());
 	}
 
 	void clear() {
 		queue.clear();
-	}
-
-	void addHistory(const std::string &track) {
-		queueHistory.push_back(track);
 	}
 
 	void removeHistory(const std::string &track) {
@@ -72,13 +70,13 @@ class guildQueue {
 	}
 
 	nlohmann::json getNextTrack() {
-		if (queue.empty()) {
-			return nullptr;
+		if (index >= queue.size()) {
+			index = 0;
 		}
-		return nlohmann::json::parse(queue[index + 1]);
+		return queue[index++];
 	}
 
-	std::vector<std::string> queue;
+	std::vector<nlohmann::json> queue;
 	std::vector<std::string> queueHistory;
 	std::string guildId;
 	std::string textChannelId;

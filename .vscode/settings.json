@@ -85,6 +85,7 @@
 		"source_location": "cpp",
 		"cinttypes": "cpp",
 		"typeindex": "cpp",
-		"__nullptr": "cpp"
+		"__nullptr": "cpp",
+		"__split_buffer": "cpp"
 	}
 }

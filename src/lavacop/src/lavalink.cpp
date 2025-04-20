@@ -201,7 +201,6 @@ void LavaLink::emitMessage(const std::string &msg) {
 }
 
 void LavaLink::connect() {
-	std::cout << url << std::endl;
 	http_headers headers;
 	headers["Authorization"] = password;
 	headers["User-Id"] = botId;
@@ -210,7 +209,6 @@ void LavaLink::connect() {
 		emitClose();
 	});
 	ws.onMessage([this](const std::string &msg) {
-		std::cout << url << msg << std::endl;
 		nlohmann::json data = nlohmann::json::parse(msg);
 		if (data["op"] == "ready") {
 			sessionId = data["sessionId"].get<std::string>();
@@ -262,7 +260,6 @@ nlohmann::json LavaLink::loadTracks(const std::string &identifier) {
 	if (resp == nullptr) {
 		return nlohmann::json();
 	}
-	//std::cout << resp->body << std::endl;
 	return nlohmann::json::parse(resp->body);
 }
 
@@ -276,8 +273,6 @@ void LavaLink::join(const std::string &guildId, const std::string &channelId, co
 		sendPayload(guildId, payload_str);
 
 		Players[guildId] = Player(PlayerConfig{.sendPayload = sendPayload, .lavalink = this, .guildId = guildId});
-	} else {
-		printf("sendPayload is not set.\n");
 	}
 }
 
@@ -345,7 +340,6 @@ Player &Player::operator=(Player &&other) noexcept {
 
 nlohmann::json Player::update(const nlohmann::json &data, const bool noReplace) {
 	if (Node->sessionId.empty()) {
-		printf("[lavacop:lavalink] sessionId is empty.\n");
 		return nlohmann::json();
 	}
 	http_headers headers;

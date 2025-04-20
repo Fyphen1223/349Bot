@@ -10,6 +10,7 @@
 #include "../commands/ping.h"
 #include "commands.h"
 
+/*/
 std::string getUserVoiceChannel(const dpp::slashcommand_t &event) {
 	dpp::snowflake user_id = event.command.usr.id;
 	dpp::guild *g = dpp::find_guild(event.command.guild_id);
@@ -73,26 +74,6 @@ void executePlay(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 	auto track = node->loadTracks(query);
 	std::string loadType = track["loadType"];
 
-	if (loadType == "track" || loadType == "short") {
-		track = track["data"];
-	} else if (loadType == "empty") {
-		track = node->loadTracks("ytsearch:" + query);
-		loadType = track["loadType"];
-		if (loadType == "empty" || loadType == "error") {
-			event.edit_response("No tracks found.");
-			return;
-		} else {
-			track = track["data"];
-		}
-	} else if (loadType == "search") {
-		// search
-	} else if (loadType == "error") {
-		event.edit_response("An error occurred while trying to load the track.");
-	} else if (loadType == "playlist" || loadType == "album" || loadType == "artist" || loadType == "station" || loadType == "podcast" || loadType == "show") {
-		std::cout << track.dump() << std::endl;
-		// playlist
-	}
-
 	if (node->getPlayer(std::to_string(event.command.get_guild().id)).isNoEventListenerSet()) {
 		handlePlayerEventsOnDiscord(node->getPlayer(std::to_string(event.command.get_guild().id)));
 	}
@@ -107,13 +88,15 @@ void executePlay(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 		event.edit_response("An error occurred while trying to play the track.");
 	}
 }
+*/
+
 
 void onSlashCommands(dpp::cluster &bot, const dpp::slashcommand_t &event) {
 	const std::string commandName = event.command.get_command_name();
 
 	if (Commands.find(commandName) != Commands.end()) {
 		Commands[commandName](bot, event);
-	} else {
-		event.reply("Command not found.");
+		return;
 	}
+	return;
 }

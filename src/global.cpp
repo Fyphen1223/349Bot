@@ -21,7 +21,6 @@ guildQueue::guildQueue(guildQueue &&other) noexcept {
 guildQueue &guildQueue::operator=(guildQueue &&other) noexcept {
 	if (this != &other) {
 		queue = std::move(other.queue);
-		queueHistory = std::move(other.queueHistory);
 		guildId = std::move(other.guildId);
 		textChannelId = std::move(other.textChannelId);
 		voiceChannelId = std::move(other.voiceChannelId);
