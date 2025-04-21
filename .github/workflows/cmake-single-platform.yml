@@ -26,7 +26,7 @@ jobs:
         git clone https://github.com/brainboxdotcc/DPP.git
         cd DPP
         sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-        sudo cmake --build build --target install
+        sudo cmake -j8 --build build --target install
         cd ..
 
     - name: Install libhv
@@ -34,7 +34,7 @@ jobs:
         git clone https://github.com/ithewei/libhv.git
         cd libhv
         sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-        sudo cmake --build build --target install
+        sudo cmake -j8 --build build --target install
         cd ..
 
     - name: Install nlohmann::json
@@ -42,11 +42,11 @@ jobs:
         git clone https://github.com/nlohmann/json.git
         cd json
         sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_TESTING=OFF
-        sudo cmake --build build --target install
+        sudo cmake -j8 --build build --target install
         cd ..
 
     - name: Configure CMake
       run: sudo cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Build
-      run: sudo cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: sudo cmake -j8 --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
