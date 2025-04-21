@@ -52,7 +52,7 @@ jobs:
       run: sudo cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-artifact
         path: ${{github.workspace}}/build/349Bot
