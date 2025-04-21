@@ -3,7 +3,8 @@
         {
             "name": "WSL",
             "includePath": [
-                "${workspaceFolder}/**"//,
+                "${workspaceFolder}/**",
+				"/usr/include/cairomm-1.0/cairomm/**",
                 //"/usr/include/**"
             ],
             "defines": [

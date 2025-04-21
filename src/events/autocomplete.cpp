@@ -49,7 +49,6 @@ void onAutoComplete(dpp::cluster &bot, const dpp::autocomplete_t &event) {
 						warn("loadType is '" + loadType + "' but tracks array is missing or invalid.");
 					}
 				} else if (loadType == "search") {
-					// Handle search results from the initial query
 					if (res.contains("data") && res["data"].is_array()) {
 						trackList = res["data"];
 						maxResults = 20;
