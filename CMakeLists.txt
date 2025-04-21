@@ -1,7 +1,7 @@
 # Minimum CMake version required, we'll just use the latest version.
 cmake_minimum_required(VERSION 3.16)
 # Project name, version and description
-project(349Bot VERSION 0.0.1 DESCRIPTION "349Bot is a blazing-fast C++ based Discord music bot.")
+project(349Bot VERSION 0.0.1 DESCRIPTION "349Bot is a blazingly-fast C++ based Discord music bot.")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
