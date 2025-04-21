@@ -32,14 +32,17 @@ WS::WS()
 
 void WS::onOpen(const std::function<void()> &callback) {
 	on_open_callbacks.push_back(callback);
+	return;
 }
 
 void WS::onClose(const std::function<void()> &callback) {
 	on_close_callbacks.push_back(callback);
+	return;
 }
 
 void WS::onMessage(const std::function<void(const std::string &)> &callback) {
 	on_message_callbacks.push_back(callback);
+	return;
 }
 
 void WS::open(const std::string &url, const http_headers &headers) {
@@ -64,6 +67,7 @@ void WS::open(const std::string &url, const http_headers &headers) {
 		}
 	};
 	ws.open(url.c_str(), headers);
+	//return; //for testing
 }
 
 void WS::close() {
@@ -71,6 +75,7 @@ void WS::close() {
 		return;
 	}
 	ws.close();
+	return;
 }
 
 void WS::setPingInterval(int interval) {
@@ -78,6 +83,7 @@ void WS::setPingInterval(int interval) {
 		return;
 	}
 	ws.setPingInterval(interval);
+	return;
 }
 
 void WS::send(const std::string &msg) {
@@ -85,18 +91,22 @@ void WS::send(const std::string &msg) {
 		return;
 	}
 	ws.send(msg);
+	return;
 }
 
 void WS::removeAllMessageListeners() {
 	on_message_callbacks.clear();
+	return;
 }
 
 void WS::removeAllOpenListeners() {
 	on_open_callbacks.clear();
+	return;
 }
 
 void WS::removeAllCloseListeners() {
 	on_close_callbacks.clear();
+	return;
 }
 
 //WS
@@ -152,52 +162,63 @@ LavaLink &LavaLink::operator=(LavaLink &&other) noexcept {
 
 void LavaLink::close() {
 	ws.close();
+	return;
 }
 
 void LavaLink::send(const std::string &msg) {
 	ws.send(msg);
+	return;
 }
 
 void LavaLink::onReady(const std::function<void()> &callback) {
 	readyCallbacks.push_back(callback);
+	return;
 }
 
 void LavaLink::onClose(const std::function<void()> &callback) {
 	closeCallbacks.push_back(callback);
+	return;
 }
 
 void LavaLink::onMessage(const std::function<void(const std::string data)> &callback) {
 	messageCallbacks.push_back(callback);
+	return;
 }
 
 void LavaLink::removeAllReadyListeners() {
 	readyCallbacks.clear();
+	return;
 }
 
 void LavaLink::removeAllCloseListeners() {
 	closeCallbacks.clear();
+	return;
 }
 
 void LavaLink::removeAllMessageListeners() {
 	messageCallbacks.clear();
+	return;
 }
 
 void LavaLink::emitReady() {
 	for (auto &callback: readyCallbacks) {
 		callback();
 	}
+	return;
 }
 
 void LavaLink::emitClose() {
 	for (auto &callback: closeCallbacks) {
 		callback();
 	}
+	return;
 }
 
 void LavaLink::emitMessage(const std::string &msg) {
 	for (auto &callback: messageCallbacks) {
 		callback(msg);
 	}
+	return;
 }
 
 void LavaLink::connect() {
@@ -228,6 +249,7 @@ void LavaLink::connect() {
 		}
 	});
 	ws.open(url, headers);
+	return;
 }
 
 bool LavaLink::isReachable() {
@@ -455,12 +477,14 @@ void Player::connect() {
 	nlohmann::json data = {
 		{"voice", {{"token", this->token}, {"endpoint", this->endpoint}, {"sessionId", this->sessionId}}}};
 	update(data);
+	return;
 }
 
 void Player::play(const std::string &track, const int startTime, const int endTime, const bool noReplace) {
 	nlohmann::json trackData = {
 		{"track", {{"encoded", track}}}};
-	update(trackData), noReplace;
+	update(trackData, noReplace);
+	return;
 }
 
 void Player::pause() {
@@ -468,6 +492,7 @@ void Player::pause() {
 		{"paused", true}};
 	paused = true;
 	update(data);
+	return;
 }
 
 void Player::resume() {
@@ -475,12 +500,14 @@ void Player::resume() {
 		{"paused", false}};
 	paused = false;
 	update(data);
+	return;
 }
 
 void Player::stop() {
 	nlohmann::json data = {
 		{"track", {{"encoded", nullptr}}}};
 	update(data);
+	return;
 }
 
 void Player::volume(const int volume) {
@@ -488,6 +515,7 @@ void Player::volume(const int volume) {
 		{"volume", volume}};
 	volumeLevel = volume;
 	update(data);
+	return;
 }
 
 void Player::seek(const int position) {
@@ -495,4 +523,5 @@ void Player::seek(const int position) {
 		{"position", position}};
 	this->position = position;
 	update(data);
+	return;
 }
