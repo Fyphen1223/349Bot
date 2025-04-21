@@ -187,6 +187,6 @@ int main(int argc, char *argv[]) {
 	}).detach();
 	std::cout << std::endl
 			  << logo << std::endl;
-	bot.start(false);
+	bot.start(dpp::st_wait);
 	return 0;
 }
