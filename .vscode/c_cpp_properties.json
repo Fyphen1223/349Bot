@@ -4,7 +4,19 @@
             "name": "WSL",
             "includePath": [
                 "${workspaceFolder}/**",
-				"/usr/include/cairomm-1.0/cairomm/**",
+                "/usr/lib/x86_64-linux-gnu/cairomm-1.0/include",
+                "/usr/include/cairo",
+				//"/usr/include/cairomm-1.0",
+				"/usr/lib/x86_64-linux-gnu/cairomm-1.0/include",
+				"/usr/include/sigc++-2.0",
+				"/usr/lib/x86_64-linux-gnu/sigc++-2.0/include",
+				"/usr/local/include/cairo",
+				"/usr/local/include/libpng16",
+				"/usr/local/include",
+				"/usr/local/include/freetype2",
+				"/usr/local/include/pixman-1",
+				"/root/skia/*",
+				"/root/skia/out/*"
                 //"/usr/include/**"
             ],
             "defines": [

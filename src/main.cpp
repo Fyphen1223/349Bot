@@ -23,6 +23,8 @@
 #include <hv/WebSocketClient.h>
 #include <hv/requests.h>
 
+#include "util/skia.h"
+
 using json = nlohmann::json;
 
 std::ifstream rawConfig("./config.json");

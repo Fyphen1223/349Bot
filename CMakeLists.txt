@@ -13,6 +13,8 @@ set(OPENSSL_LIBRARIES /usr/local/ssl/lib)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(Freetype REQUIRED)
+
 include(FetchContent)
 
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
@@ -25,6 +27,18 @@ pkg_search_module(OPUS REQUIRED opus)
 # Create an executable
 include_directories(/usr/local/include/hv)
 link_directories(/usr/local/lib)
+
+include_directories(/root/skia/)
+link_directories(/root/skia/out/Static)
+
+add_library(SkiaLib STATIC IMPORTED GLOBAL)
+set_target_properties(SkiaLib PROPERTIES
+  IMPORTED_LOCATION "/root/skia/out/Static/libskia.a"
+  INTERFACE_INCLUDE_DIRECTORIES "/root/skia/include"
+)
+
+add_library(Skia::Skia ALIAS SkiaLib)
+
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
@@ -43,6 +57,7 @@ add_executable(${PROJECT_NAME}
 	src/events/commands.cpp
 	src/commands/ping.cpp
 	src/commands/play.cpp
+	src/util/skia.cpp
 )
 
 # add_library(math_utils OBJECT src/lib/math_utils.cppm)
@@ -51,7 +66,7 @@ add_executable(${PROJECT_NAME}
 find_package(DPP CONFIG REQUIRED)
 
 # Link the pre-installed DPP package.
-target_link_libraries(${PROJECT_NAME} PRIVATE dpp::dpp ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} ZLIB::ZLIB ${OPUS_LIBRARIES} nlohmann_json::nlohmann_json hv)
+target_link_libraries(${PROJECT_NAME} PRIVATE dpp::dpp ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} ZLIB::ZLIB ${OPUS_LIBRARIES} nlohmann_json::nlohmann_json hv Skia::Skia Freetype::Freetype)
 
 # Include the DPP directories.
 target_include_directories(${PROJECT_NAME} PRIVATE
