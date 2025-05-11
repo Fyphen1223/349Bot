@@ -47,27 +47,6 @@ bool isValidConfig(const json &data) {
 }
 
 int main(int argc, char *argv[]) {
-	// Example call to CreateMusicCard - replace with actual logic where needed
-	bool cardCreated = CreateMusicCard(
-		"The Days",
-		"Avicii",
-		"https://fyphen1223.github.io/SCP-Images/those-remaining.jpg",// Example thumbnail URL
-		"https://fyphen1223.github.io/SCP-Images/those-remaining.jpg",// Example uploader icon URL
-		"Avicii",
-		"YouTube",
-		120.5,				   // Current time in seconds
-		300.0,				   // Total time in seconds
-		1,					   // Current track number
-		10,					   // Total tracks in queue
-		"music_card_test.png");// Output file path
-
-	if (cardCreated) {
-		std::cout << "Test music card created successfully: music_card_test.png" << std::endl;
-	} else {
-		std::cerr << "Failed to create test music card." << std::endl;
-		// Potentially exit or handle the error if card creation is critical at startup
-	}
-
 	if (rawConfig.is_open()) {
 		info("Config file opened successfully.");
 	} else {
@@ -96,6 +75,22 @@ int main(int argc, char *argv[]) {
 	setLogDirectory(config["log"]["directory"]);
 	setMaxLogFiles(config["log"]["maxLogFiles"]);
 	initiateLog();
+
+	// Example call to CreateMusicCard - replace with actual logic where needed
+	bool cardCreated = CreateMusicCard(
+		"The Days",
+		"Avicii",
+		"https://fyphen1223.github.io/SCP-Images/those-remaining.jpg",// Example thumbnail URL
+		"https://fyphen1223.github.io/SCP-Images/those-remaining.jpg",// Example uploader icon URL
+		"Avicii",
+		"YouTube",
+		120.5,// Current time in seconds
+		300.0,// Total time in seconds
+		1,	  // Current track number
+		10,	  // Total tracks in queue
+		"music_card_test.png",
+		config["card"]["fontFamily"].get<std::string>().c_str());
+
 
 	bool shouldRegisterSlashCommands = false;
 	for (int i = 0; i < argc; ++i) {

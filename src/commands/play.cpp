@@ -23,9 +23,17 @@ void handlePlayerEventsOnDiscord(Player &player, const std::string &guildId) {
 			p->play(t["encoded"]);
 		} else {
 			dpp::message msg;
-			msg.content = "Queue is empty.";
+			msg.content = "Queue is empty. Please add more tracks or I will leave in the next 10 minutes.";
 			msg.channel_id = GQ.queue[guildId].textChannelId;
 			msg.guild_id = dpp::snowflake(guildId);
+			// Create a new embed object
+			dpp::embed embed_object = dpp::embed()
+										  .set_title("Queue Empty")
+										  .set_description("The playback queue is now empty. Add more tracks to continue listening.")
+										  .set_color(dpp::colors::black);// Example: set a color for the embed
+
+			// Add the created embed object to the message's embeds vector
+			msg.embeds.push_back(embed_object);
 			BH.bot->message_create(msg, [guildId](const dpp::confirmation_callback_t &event) {});
 		}
 	});

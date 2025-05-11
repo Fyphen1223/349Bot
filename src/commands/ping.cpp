@@ -10,6 +10,6 @@ std::string getRestPing(dpp::cluster &bot) {
 }
 
 void Ping(dpp::cluster &bot, const dpp::slashcommand_t &event) {
-	event.reply("Pong! REST Ping: " + getRestPing(bot));
+	event.reply("Hey there!\nPong! REST Ping: " + getRestPing(bot));
 	return;
 }

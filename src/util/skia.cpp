@@ -1,26 +1,5 @@
-#include "include/codec/SkCodec.h"
-#include "include/core/SkBitmap.h"
-#include "include/core/SkCanvas.h"
-#include "include/core/SkColor.h"
-#include "include/core/SkData.h"
-#include "include/core/SkFont.h"
-#include "include/core/SkImage.h"
-#include "include/core/SkImageInfo.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkRRect.h"
-#include "include/core/SkRect.h"
-#include "include/core/SkStream.h"
-#include "include/core/SkSurface.h"
-#include "include/core/SkTextBlob.h"
-#include "include/encode/SkPngEncoder.h"
+#include "./skia.h"
 
-// hv library for HTTP requests
-#include "hv/requests.h"
-
-#include <algorithm>// For std::max, std::min
-#include <memory>	// For std::unique_ptr
-#include <string>
-#include <vector>
 
 sk_sp<SkImage> FetchAndDecodeImage(const std::string &url) {
 	auto resp = requests::get(url.c_str());
@@ -65,6 +44,7 @@ sk_sp<SkImage> FetchAndDecodeImage(const std::string &url) {
 
 #include "include/effects/SkImageFilters.h"
 #include "include/pathops/SkPathOps.h"
+#include "skia.h"
 // Function to format time in seconds to M:SS or S s format
 std::string format_time(double total_seconds) {
 	if (total_seconds < 0)
@@ -95,20 +75,31 @@ bool CreateMusicCard(
 	double totalTimeSec,
 	int currentTrack,
 	int totalTracks,
-	const char *outputPath) {
-	// --- Fixed FHD Resolution ---
+	const char *outputPath,
+	const char *fontFamily) {
+
+	sk_sp<SkFontMgr> fontMgr = SkFontMgr_New_FontConfig(nullptr);
+
+	SkFontStyle fontStyle(400, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant);
+
+	sk_sp<SkTypeface> typeface = fontMgr->legacyMakeTypeface(fontFamily, fontStyle);
+
+	if (!typeface) {
+		fprintf(stderr, "Failed to load typeface: %s\n", fontFamily);
+	}
+	// --- Fixed FHD Resolution ---s
 	const int width = 1920;
 	const int height = 1080;
 
 	// --- Colors ---
-	const SkColor bgColor = SkColorSetARGB(0xFF, 0x19, 0x28, 0x41);// Dark Blue
-	const SkColor textColor = SK_ColorWHITE;
+	const SkColor bgColor = SkColorSetRGB(255, 255, 255);// White
+	const SkColor textColor = SK_ColorBLACK;
 	const SkColor authorColor = SkColorSetARGB(0xFF, 0x33, 0xA1, 0xFF);		  // Light Blue
 	const SkColor secondaryTextColor = SkColorSetARGB(0xFF, 0xC0, 0xC0, 0xC0);// Light Gray
 	const SkColor progressBgColor = SkColorSetARGB(0xFF, 0x6C, 0x75, 0x7D);	  // Gray
 	const SkColor progressFgColor = SkColorSetARGB(0xFF, 0x76, 0xC7, 0xFF);	  // Lighter Blue
 	const SkColor sourceBadgeColor = SkColorSetARGB(0xFF, 0xE6, 0x21, 0x17);  // Red
-	const SkColor sourceTextColor = SK_ColorWHITE;
+	const SkColor sourceTextColor = SK_ColorBLACK;
 
 	// --- Layout Constants ---
 	const float padding = 60.0f;
@@ -129,6 +120,8 @@ bool CreateMusicCard(
 		return false;
 	}
 	SkCanvas *canvas = surface->getCanvas();
+
+	//Fill out the background with bgColor
 	canvas->clear(bgColor);
 
 	// 2. Fetch and decode images (Thumbnail and Uploader Icon)
@@ -146,36 +139,42 @@ bool CreateMusicCard(
 	canvas->clipRRect(thumbnailRRect, true);
 	if (thumbnailImage) {
 		canvas->drawImageRect(thumbnailImage, thumbnailRRect.getBounds(), SkSamplingOptions(SkFilterMode::kLinear));
-	} else {
-		// Draw placeholder
-		paint.setColor(SK_ColorDKGRAY);
-		canvas->drawRRect(thumbnailRRect, paint);
-		// Optional: Draw error text on placeholder
+		canvas->drawImageRect(thumbnailImage, thumbnailRRect.getBounds(), SkSamplingOptions(SkFilterMode::kLinear));
 	}
-	canvas->restore();
+	canvas->restore();// Restore after clipping thumbnail
 
-
-	// 4. Setup Fonts and Paints for Text
-	// Note: Using default font. For specific fonts, load SkTypeface.
-	SkFont titleFont;
-	titleFont.setSize(80.0f);
-	SkFont authorFont;
-	authorFont.setSize(60.0f);
-	SkFont uploaderFont;
-	uploaderFont.setSize(55.0f);
-	SkFont sourceFont;
-	sourceFont.setSize(40.0f);
-	SkFont trackFont;
-	trackFont.setSize(70.0f);
-	SkFont timeFont;
-	timeFont.setSize(50.0f);
+	// 4. Setup Fonts and Paints for Text (loaded typeface)
+	SkFont titleFont(typeface, 80.0f);
+	SkFont authorFont(typeface, 60.0f);
+	SkFont uploaderFont(typeface, 55.0f);
+	SkFont sourceFont(typeface, 40.0f);
+	SkFont trackFont(typeface, 70.0f);
+	SkFont timeFont(typeface, 50.0f);
 
 	SkPaint textPaint;
 	textPaint.setAntiAlias(true);
 
 	// --- Calculate Text Positions ---
-	float currentY = padding * 2.5f;
+	// If thumbnail failed to load, we draw text over a placeholder.
+	// Otherwise, text is drawn to the right of the thumbnail.
+	// The following block was inside an 'else' for when thumbnailImage is null.
+	// It should be outside if text is always drawn.
+	// For now, assuming text is drawn regardless of thumbnail success,
+	// but its positioning might need adjustment based on whether thumbnail is present.
+	// The original logic placed text drawing *only* if thumbnail load failed.
+	// This seems incorrect if the card should always have text.
+	// Moving text drawing logic outside the thumbnail check.
 
+	// If thumbnail failed, draw a placeholder
+	if (!thumbnailImage) {
+		paint.setColor(SK_ColorLTGRAY);// Placeholder color
+		paint.setStyle(SkPaint::kFill_Style);
+		canvas->drawRRect(thumbnailRRect, paint);
+	}
+
+
+	// --- Calculate Text Positions ---
+	float currentY = padding * 2.5f;
 	// 5. Draw Title
 	textPaint.setColor(textColor);
 	canvas->drawString(title.c_str(), textStartX, currentY, titleFont, textPaint);
@@ -316,29 +315,3 @@ bool CreateMusicCard(
 
 	return true;// Success
 }
-
-/*
-// Example Usage (replace with your actual call):
-int main() {
-	bool success = CreateMusicCardFHD(
-		"Tobu - Higher", // title
-		"Tobu", // author
-		"https://i.scdn.co/image/ab67616d0000b27375a16e71faa8a866966a8ee0", // Example thumbnail URL
-		"https://yt3.googleusercontent.com/ytc/AIdro_k-8kZycsKeV_SS86Rk8z7QEzQzNe8Z8AS9YQ=s176-c-k-c0x00ffffff-no-rj", // Example uploader icon URL (F-yphen)
-		"Fyphen", // uploaderName
-		"YouTube", // sourceName
-		60.0, // currentTimeSec (e.g., 1 minute)
-		214.0, // totalTimeSec (e.g., 3m34s)
-		1, // currentTrack
-		2, // totalTracks
-		"music_card_fhd.png" // Output file path
-	);
-
-	if (success) {
-		printf("FHD Music card created successfully: music_card_fhd.png\n");
-	} else {
-		printf("Failed to create FHD music card.\n");
-	}
-	return 0;
-}
-*/

@@ -15,6 +15,11 @@ find_package(ZLIB REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(Freetype REQUIRED)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
+include_directories(${FONTCONFIG_INCLUDE_DIRS})
+link_directories(${FONTCONFIG_LIBRARY_DIRS})
+
 include(FetchContent)
 
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
@@ -66,7 +71,7 @@ add_executable(${PROJECT_NAME}
 find_package(DPP CONFIG REQUIRED)
 
 # Link the pre-installed DPP package.
-target_link_libraries(${PROJECT_NAME} PRIVATE dpp::dpp ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} ZLIB::ZLIB ${OPUS_LIBRARIES} nlohmann_json::nlohmann_json hv Skia::Skia Freetype::Freetype)
+target_link_libraries(${PROJECT_NAME} PRIVATE dpp::dpp ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} ZLIB::ZLIB ${OPUS_LIBRARIES} nlohmann_json::nlohmann_json hv Skia::Skia Freetype::Freetype ${FONTCONFIG_LIBRARIES})
 
 # Include the DPP directories.
 target_include_directories(${PROJECT_NAME} PRIVATE
