@@ -45,6 +45,12 @@ sk_sp<SkImage> FetchAndDecodeImage(const std::string &url) {
 #include "include/effects/SkImageFilters.h"
 #include "include/pathops/SkPathOps.h"
 #include "skia.h"
+#include <chrono>
+#include <future>
+#include <mutex>
+#include <unordered_map>
+
+
 // Function to format time in seconds to M:SS or S s format
 std::string format_time(double total_seconds) {
 	if (total_seconds < 0)
@@ -63,8 +69,57 @@ std::string format_time(double total_seconds) {
 	}
 }
 
-// Function to create an FHD image displaying music info based on the provided style
-bool CreateMusicCard(
+sk_sp<SkFontMgr> GetFontMgr() {
+	static sk_sp<SkFontMgr> mgr = SkFontMgr_New_FontConfig(nullptr);
+	return mgr;
+}
+
+sk_sp<SkTypeface> GetTypeface(const char *fontFamily) {
+	static std::unordered_map<std::string, sk_sp<SkTypeface>> cache;
+	static std::mutex cache_mutex;
+	std::string key(fontFamily ? fontFamily : "");
+	{
+		std::lock_guard<std::mutex> lock(cache_mutex);
+		auto it = cache.find(key);
+		if (it != cache.end())
+			return it->second;
+	}
+	sk_sp<SkTypeface> tf = GetFontMgr()->legacyMakeTypeface(fontFamily, SkFontStyle(400, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant));
+	if (tf) {
+		std::lock_guard<std::mutex> lock(cache_mutex);
+		cache[key] = tf;
+	}
+	return tf;
+}
+
+
+// --- Fixed FHD Resolution ---s
+const int width = 1920;
+const int height = 1080;
+
+// --- Colors ---
+const SkColor bgColor = SkColorSetRGB(255, 255, 255);// White
+const SkColor textColor = SK_ColorBLACK;
+const SkColor authorColor = SkColorSetARGB(0xFF, 0x33, 0xA1, 0xFF);		  // Light Blue
+const SkColor secondaryTextColor = SkColorSetARGB(0xFF, 0xC0, 0xC0, 0xC0);// Light Gray
+const SkColor progressBgColor = SkColorSetARGB(0xFF, 0x6C, 0x75, 0x7D);	  // Gray
+const SkColor progressFgColor = SkColorSetARGB(0xFF, 0x76, 0xC7, 0xFF);	  // Lighter Blue
+const SkColor sourceBadgeColor = SkColorSetARGB(0xFF, 0xE6, 0x21, 0x17);  // Red
+const SkColor sourceTextColor = SK_ColorBLACK;
+
+// --- Layout Constants ---
+const float padding = 60.0f;
+const float thumbnailHeight = height * 0.85f;
+const float thumbnailWidth = thumbnailHeight;// Square thumbnail
+const float thumbnailCornerRadius = 30.0f;
+const float textStartX = thumbnailWidth + 2 * padding;
+const float progressBarHeight = 12.0f;
+const float progressBarY = height - padding - progressBarHeight;
+const float uploaderIconSize = 110.0f;
+const float sourceBadgeHeight = 60.0f;
+const float sourceBadgePadding = 20.0f;
+
+sk_sp<SkData> CreateMusicCard(
 	const std::string &title,
 	const std::string &author,
 	const std::string &thumbnailUrl,
@@ -75,147 +130,65 @@ bool CreateMusicCard(
 	double totalTimeSec,
 	int currentTrack,
 	int totalTracks,
-	const char *outputPath,
 	const char *fontFamily) {
-
-	sk_sp<SkFontMgr> fontMgr = SkFontMgr_New_FontConfig(nullptr);
-
-	SkFontStyle fontStyle(400, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant);
-
-	sk_sp<SkTypeface> typeface = fontMgr->legacyMakeTypeface(fontFamily, fontStyle);
-
+	auto start = std::chrono::high_resolution_clock::now();
+	sk_sp<SkTypeface> typeface = GetTypeface(fontFamily);
 	if (!typeface) {
 		fprintf(stderr, "Failed to load typeface: %s\n", fontFamily);
 	}
-	// --- Fixed FHD Resolution ---s
-	const int width = 1920;
-	const int height = 1080;
 
-	// --- Colors ---
-	const SkColor bgColor = SkColorSetRGB(255, 255, 255);// White
-	const SkColor textColor = SK_ColorBLACK;
-	const SkColor authorColor = SkColorSetARGB(0xFF, 0x33, 0xA1, 0xFF);		  // Light Blue
-	const SkColor secondaryTextColor = SkColorSetARGB(0xFF, 0xC0, 0xC0, 0xC0);// Light Gray
-	const SkColor progressBgColor = SkColorSetARGB(0xFF, 0x6C, 0x75, 0x7D);	  // Gray
-	const SkColor progressFgColor = SkColorSetARGB(0xFF, 0x76, 0xC7, 0xFF);	  // Lighter Blue
-	const SkColor sourceBadgeColor = SkColorSetARGB(0xFF, 0xE6, 0x21, 0x17);  // Red
-	const SkColor sourceTextColor = SK_ColorBLACK;
+	// 画像取得を非同期で開始
+	auto thumbFuture = std::async(std::launch::async, FetchAndDecodeImage, thumbnailUrl);
+	auto iconFuture = std::async(std::launch::async, FetchAndDecodeImage, uploaderIconUrl);
 
-	// --- Layout Constants ---
-	const float padding = 60.0f;
-	const float thumbnailHeight = height * 0.85f;
-	const float thumbnailWidth = thumbnailHeight;// Square thumbnail
-	const float thumbnailCornerRadius = 30.0f;
-	const float textStartX = thumbnailWidth + 2 * padding;
-	const float progressBarHeight = 12.0f;
-	const float progressBarY = height - padding - progressBarHeight;
-	const float uploaderIconSize = 80.0f;
-	const float sourceBadgeHeight = 60.0f;
-	const float sourceBadgePadding = 20.0f;
-
-	// 1. Create the drawing surface
+	// 1. 描画サーフェス作成
 	sk_sp<SkSurface> surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(width, height));
-	if (!surface) {
-		fprintf(stderr, "Failed to create SkSurface.\n");
-		return false;
-	}
 	SkCanvas *canvas = surface->getCanvas();
 
-	//Fill out the background with bgColor
+	// 背景塗りつぶし
 	canvas->clear(bgColor);
 
-	// 2. Fetch and decode images (Thumbnail and Uploader Icon)
-	sk_sp<SkImage> thumbnailImage = FetchAndDecodeImage(thumbnailUrl);
-	sk_sp<SkImage> uploaderIconImage = FetchAndDecodeImage(uploaderIconUrl);
-
-	// 3. Draw Thumbnail
-	SkPaint paint;
-	paint.setAntiAlias(true);
-	SkRRect thumbnailRRect = SkRRect::MakeRectXY(
-		SkRect::MakeXYWH(padding, (height - thumbnailHeight) / 2.0f, thumbnailWidth, thumbnailHeight),
-		thumbnailCornerRadius, thumbnailCornerRadius);
-
-	canvas->save();
-	canvas->clipRRect(thumbnailRRect, true);
-	if (thumbnailImage) {
-		canvas->drawImageRect(thumbnailImage, thumbnailRRect.getBounds(), SkSamplingOptions(SkFilterMode::kLinear));
-		canvas->drawImageRect(thumbnailImage, thumbnailRRect.getBounds(), SkSamplingOptions(SkFilterMode::kLinear));
-	}
-	canvas->restore();// Restore after clipping thumbnail
-
-	// 4. Setup Fonts and Paints for Text (loaded typeface)
-	SkFont titleFont(typeface, 80.0f);
-	SkFont authorFont(typeface, 60.0f);
-	SkFont uploaderFont(typeface, 55.0f);
-	SkFont sourceFont(typeface, 40.0f);
-	SkFont trackFont(typeface, 70.0f);
+	// 2. まずテキストや図形だけ描画（画像以外）
+	SkFont titleFont(typeface, 120.0f);
+	SkFont uploaderFont(typeface, 90.0f);
+	SkFont sourceFont(typeface, 50.0f);
+	SkFont trackFont(typeface, 80.0f);
 	SkFont timeFont(typeface, 50.0f);
 
 	SkPaint textPaint;
 	textPaint.setAntiAlias(true);
 
-	// --- Calculate Text Positions ---
-	// If thumbnail failed to load, we draw text over a placeholder.
-	// Otherwise, text is drawn to the right of the thumbnail.
-	// The following block was inside an 'else' for when thumbnailImage is null.
-	// It should be outside if text is always drawn.
-	// For now, assuming text is drawn regardless of thumbnail success,
-	// but its positioning might need adjustment based on whether thumbnail is present.
-	// The original logic placed text drawing *only* if thumbnail load failed.
-	// This seems incorrect if the card should always have text.
-	// Moving text drawing logic outside the thumbnail check.
+	SkPaint paint;
+	paint.setAntiAlias(true);
 
-	// If thumbnail failed, draw a placeholder
-	if (!thumbnailImage) {
-		paint.setColor(SK_ColorLTGRAY);// Placeholder color
-		paint.setStyle(SkPaint::kFill_Style);
-		canvas->drawRRect(thumbnailRRect, paint);
-	}
+	// サムネイル枠だけ先に描画（画像は後で）
+	SkRRect thumbnailRRect = SkRRect::MakeRectXY(
+		SkRect::MakeXYWH(padding, (height - thumbnailHeight) / 2.0f, thumbnailWidth, thumbnailHeight),
+		thumbnailCornerRadius, thumbnailCornerRadius);
+	paint.setColor(SK_ColorLTGRAY);
+	paint.setStyle(SkPaint::kFill_Style);
+	canvas->drawRRect(thumbnailRRect, paint);
 
-
-	// --- Calculate Text Positions ---
-	float currentY = padding * 2.5f;
-	// 5. Draw Title
+	// --- テキストや図形の描画 ---
+	float currentY = padding * 5.5f;
+	// タイトル
 	textPaint.setColor(textColor);
 	canvas->drawString(title.c_str(), textStartX, currentY, titleFont, textPaint);
 	currentY += titleFont.getSize() * 1.1f;
 
-	// 6. Draw Author ("by Author")
-	const std::string byStr = "by ";
-	SkRect byBounds;
-	authorFont.measureText(byStr.c_str(), byStr.length(), SkTextEncoding::kUTF8, &byBounds);
-	textPaint.setColor(authorColor);
-	canvas->drawString(byStr.c_str(), textStartX, currentY, authorFont, textPaint);
-	canvas->drawString(author.c_str(), textStartX + byBounds.width() + 5, currentY, authorFont, textPaint);
-	currentY += authorFont.getSize() * 1.5f;
-
-	// 7. Draw Uploader (Icon + Name)
+	// アップローダー名（アイコンは後で）
 	float uploaderY = currentY;
 	float uploaderIconX = textStartX;
-	float uploaderIconY = uploaderY - uploaderIconSize * 0.75f;// Adjust vertical alignment
+	float uploaderIconY = uploaderY - uploaderIconSize * 0.75f;
 	float uploaderTextX = uploaderIconX + uploaderIconSize + padding * 0.5f;
 
-	if (uploaderIconImage) {
-		SkPath circleClip;
-		circleClip.addCircle(uploaderIconX + uploaderIconSize / 2.0f, uploaderIconY + uploaderIconSize / 2.0f, uploaderIconSize / 2.0f);
-		canvas->save();
-		canvas->clipPath(circleClip, true);
-		canvas->drawImageRect(uploaderIconImage, SkRect::MakeXYWH(uploaderIconX, uploaderIconY, uploaderIconSize, uploaderIconSize), SkSamplingOptions(SkFilterMode::kLinear));
-		canvas->restore();
-	} else {
-		// Draw placeholder circle
-		paint.setColor(SK_ColorDKGRAY);
-		paint.setStyle(SkPaint::kFill_Style);
-		canvas->drawCircle(uploaderIconX + uploaderIconSize / 2.0f, uploaderIconY + uploaderIconSize / 2.0f, uploaderIconSize / 2.0f, paint);
-	}
 	textPaint.setColor(textColor);
 	canvas->drawString(uploaderName.c_str(), uploaderTextX, uploaderY, uploaderFont, textPaint);
-	currentY += uploaderIconSize * 0.5f + padding;// Adjust spacing after uploader line
+	currentY += uploaderIconSize * 0.5f + padding;
 
-	// 8. Draw Progress Percentage and Source Badge
+	// 進捗パーセントとバッジ
 	double progressPercent = (totalTimeSec > 0) ? (currentTimeSec / totalTimeSec * 100.0) : 0.0;
 	char percentStr[10];
-	// Explicitly use double versions of std::min and std::max
 	snprintf(percentStr, sizeof(percentStr), "%.0f%%", std::max<double>(0.0, std::min<double>(100.0, progressPercent)));
 
 	SkRect percentBounds;
@@ -224,30 +197,26 @@ bool CreateMusicCard(
 	sourceFont.measureText(sourceName.c_str(), sourceName.length(), SkTextEncoding::kUTF8, &sourceNameBounds);
 
 	float percentX = textStartX;
-	float percentY = currentY;// Align baseline with source badge text
+	float percentY = currentY;
 	float badgeX = percentX + percentBounds.width() + padding * 0.5f;
 	float badgeWidth = sourceNameBounds.width() + 2 * sourceBadgePadding;
-	float badgeY = percentY - sourceBadgeHeight * 0.75f;// Align badge visually
+	float badgeY = percentY - sourceBadgeHeight * 0.75f;
 
-	// Draw Percentage Text
 	textPaint.setColor(textColor);
 	canvas->drawString(percentStr, percentX, percentY, sourceFont, textPaint);
 
-	// Draw Source Badge Background
 	paint.setColor(sourceBadgeColor);
 	SkRRect badgeRRect = SkRRect::MakeRectXY(
 		SkRect::MakeXYWH(badgeX, badgeY, badgeWidth, sourceBadgeHeight),
-		sourceBadgeHeight / 2.0f, sourceBadgeHeight / 2.0f);// Pill shape
+		sourceBadgeHeight / 2.0f, sourceBadgeHeight / 2.0f);
 	canvas->drawRRect(badgeRRect, paint);
 
-	// Draw Source Name Text on Badge
 	textPaint.setColor(sourceTextColor);
 	float sourceTextX = badgeX + sourceBadgePadding;
-	float sourceTextY = badgeY + sourceBadgeHeight / 2.0f + sourceNameBounds.height() / 2.0f;// Center vertically
+	float sourceTextY = badgeY + sourceBadgeHeight / 2.0f + sourceNameBounds.height() / 2.0f;
 	canvas->drawString(sourceName.c_str(), sourceTextX, sourceTextY, sourceFont, textPaint);
 
-
-	// 9. Draw Track Number (Top Right)
+	// トラック番号
 	char trackStr[20];
 	snprintf(trackStr, sizeof(trackStr), "%d / %d", currentTrack, totalTracks);
 	SkRect trackBounds;
@@ -255,15 +224,12 @@ bool CreateMusicCard(
 	textPaint.setColor(textColor);
 	canvas->drawString(trackStr, width - padding - trackBounds.width(), padding * 2.0f, trackFont, textPaint);
 
-
-	// 10. Draw Progress Bar
+	// プログレスバー
 	float progressBarWidth = width - 2 * padding;
-	// Background
 	SkRect progressBarBackRect = SkRect::MakeXYWH(padding, progressBarY, progressBarWidth, progressBarHeight);
 	paint.setColor(progressBgColor);
 	canvas->drawRect(progressBarBackRect, paint);
 
-	// Foreground
 	float progress = (totalTimeSec > 0) ? (currentTimeSec / totalTimeSec) : 0.0f;
 	float clampedProgress = std::max(0.0f, std::min(1.0f, progress));
 	float progressWidth = progressBarWidth * clampedProgress;
@@ -273,45 +239,47 @@ bool CreateMusicCard(
 		canvas->drawRect(progressBarFrontRect, paint);
 	}
 
-	// 11. Draw Timestamps
+	// タイムスタンプ
 	std::string currentTimeStr = format_time(currentTimeSec);
 	std::string totalTimeStr = format_time(totalTimeSec);
-	float timeY = progressBarY + progressBarHeight + padding * 0.8f;// Below progress bar
-
+	float timeY = progressBarY + progressBarHeight + padding * 0.8f;
 	textPaint.setColor(textColor);
-	// Current time (bottom left)
 	canvas->drawString(currentTimeStr.c_str(), padding, timeY, timeFont, textPaint);
-
-	// Total time (bottom right)
 	SkRect totalTimeBounds;
 	timeFont.measureText(totalTimeStr.c_str(), totalTimeStr.length(), SkTextEncoding::kUTF8, &totalTimeBounds);
 	canvas->drawString(totalTimeStr.c_str(), width - padding - totalTimeBounds.width(), timeY, timeFont, textPaint);
 
+	// --- ここで画像取得を待つ ---
+	sk_sp<SkImage> thumbnailImage = thumbFuture.get();
+	sk_sp<SkImage> uploaderIconImage = iconFuture.get();
 
-	// 12. Create final image snapshot
+	// サムネイル画像を描画
+	if (thumbnailImage) {
+		canvas->save();
+		canvas->clipRRect(thumbnailRRect, true);
+		canvas->drawImageRect(thumbnailImage, thumbnailRRect.getBounds(), SkSamplingOptions(SkFilterMode::kLinear));
+		canvas->restore();
+	}
+
+	// アップローダーアイコンを描画
+	if (uploaderIconImage) {
+		SkPath circleClip;
+		circleClip.addCircle(uploaderIconX + uploaderIconSize / 2.0f, uploaderIconY + uploaderIconSize / 2.0f, uploaderIconSize / 2.0f);
+		canvas->save();
+		canvas->clipPath(circleClip, true);
+		canvas->drawImageRect(uploaderIconImage, SkRect::MakeXYWH(uploaderIconX, uploaderIconY, uploaderIconSize, uploaderIconSize), SkSamplingOptions(SkFilterMode::kLinear));
+		canvas->restore();
+	} else {
+		// プレースホルダー
+		paint.setColor(SK_ColorDKGRAY);
+		paint.setStyle(SkPaint::kFill_Style);
+		canvas->drawCircle(uploaderIconX + uploaderIconSize / 2.0f, uploaderIconY + uploaderIconSize / 2.0f, uploaderIconSize / 2.0f, paint);
+	}
+
 	sk_sp<SkImage> finalImage = surface->makeImageSnapshot();
-	if (!finalImage) {
-		fprintf(stderr, "Failed to create image snapshot.\n");
-		return false;
-	}
-
-	// 13. Encode the image as PNG
 	sk_sp<SkData> pngData = SkPngEncoder::Encode(nullptr, finalImage.get(), {});
-	if (!pngData) {
-		fprintf(stderr, "Failed to encode image to PNG.\n");
-		return false;
-	}
-
-	// 14. Write the PNG data to the output file
-	SkFILEWStream outFile(outputPath);
-	if (!outFile.isValid()) {
-		fprintf(stderr, "Failed to open output file: %s\n", outputPath);
-		return false;
-	}
-	if (!outFile.write(pngData->data(), pngData->size())) {
-		fprintf(stderr, "Failed to write PNG data to file: %s\n", outputPath);
-		return false;// Writing failed
-	}
-
-	return true;// Success
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	fprintf(stderr, "Image generation took %lld ms\n", duration.count());
+	return pngData;
 }

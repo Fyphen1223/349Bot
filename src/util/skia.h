@@ -28,17 +28,16 @@
 #include <vector>
 
 
-bool CreateMusicCard(const std::string &title,
-					 const std::string &author,
-					 const std::string &thumbnailUrl,
-					 const std::string &uploaderIconUrl,
-					 const std::string &uploaderName,
-					 const std::string &sourceName,
-					 double currentTimeSec,
-					 double totalTimeSec,
-					 int currentTrack,
-					 int totalTracks,
-					 const char *outputPath,
-					 const char *fontFamily);
+sk_sp<SkData> CreateMusicCard(const std::string &title,
+							  const std::string &author,
+							  const std::string &thumbnailUrl,
+							  const std::string &uploaderIconUrl,
+							  const std::string &uploaderName,
+							  const std::string &sourceName,
+							  double currentTimeSec,
+							  double totalTimeSec,
+							  int currentTrack,
+							  int totalTracks,
+							  const char *fontFamily);
 
 #endif// SKIA_H

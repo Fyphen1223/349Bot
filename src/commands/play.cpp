@@ -2,6 +2,9 @@
 #include "../global.h"
 #include "../lib/embeds.h"
 
+#include "../util/skia.h"
+
+
 void handlePlayerEventsOnDiscord(Player &player, const std::string &guildId) {
 	player.onTrackStart([guildId](std::string data) {
 		dpp::message msg;

@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 	initiateLog();
 
 	// Example call to CreateMusicCard - replace with actual logic where needed
-	bool cardCreated = CreateMusicCard(
+	auto img = CreateMusicCard(
 		"The Days",
 		"Avicii",
 		"https://fyphen1223.github.io/SCP-Images/those-remaining.jpg",// Example thumbnail URL
@@ -88,9 +88,7 @@ int main(int argc, char *argv[]) {
 		300.0,// Total time in seconds
 		1,	  // Current track number
 		10,	  // Total tracks in queue
-		"music_card_test.png",
 		config["card"]["fontFamily"].get<std::string>().c_str());
-
 
 	bool shouldRegisterSlashCommands = false;
 	for (int i = 0; i < argc; ++i) {
