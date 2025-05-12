@@ -57,13 +57,13 @@ jobs:
       run: |
         git clone 'https://chromium.googlesource.com/chromium/tools/depot_tools.git'
         export PATH="${PWD}/depot_tools:${PATH}"
-        git clone https://skia.googlesource.com/skia.git
-        cd skia
+        git clone https://skia.googlesource.com/skia.git /root/skia
+        cd /root/skia
         python3 tools/git-sync-deps
         sudo python3 bin/fetch-ninja
         sudo tools/install_dependencies.sh
-        if [ ! -d "out/Release" ]; then
-          mkdir -p out/Release
+        if [ ! -d "out/Static" ]; then
+          mkdir -p out/Static
         fi
         sudo bin/gn gen out/Static --args='is_official_build=true'
         sudo ninja -C out/Static skia
