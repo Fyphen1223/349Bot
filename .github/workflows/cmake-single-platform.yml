@@ -28,67 +28,18 @@ jobs:
 
     - name: Install dependencies
       run: |
-        echo "build-essential cmake git libssl-dev zlib1g-dev libopus-dev python3" > apt-dependencies.txt
+        echo "build-essential cmake git libssl-dev zlib1g-dev libopus-dev python3 python3-pip" > apt-dependencies.txt
         sudo apt-get update
         sudo apt-get install -y $(cat apt-dependencies.txt)
-
-    # キャッシュを使ったDPPのビルド
-    - name: Cache DPP build
-      uses: actions/cache@v4
-      with:
-        path: ./DPP/build
-        key: dpp-${{ hashFiles('DPP/CMakeLists.txt') }}
-        restore-keys: |
-          dpp-
-
-    - name: Install dpp
-      run: |
-        git clone https://github.com/brainboxdotcc/DPP.git
-        cd DPP
-        sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-        sudo cmake --build build --target install -j8
-        cd ..
-
-    # キャッシュを使ったlibhvのビルド
-    - name: Cache libhv build
-      uses: actions/cache@v4
-      with:
-        path: ./libhv/build
-        key: libhv-${{ hashFiles('libhv/CMakeLists.txt') }}
-        restore-keys: |
-          libhv-
-
-    - name: Install libhv
-      run: |
-        git clone https://github.com/ithewei/libhv.git
-        cd libhv
-        sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-        sudo cmake --build build --target install -j8
-        cd ..
-
-    # キャッシュを使ったnlohmann::jsonのビルド
-    - name: Cache nlohmann::json build
-      uses: actions/cache@v4
-      with:
-        path: ./json/build
-        key: nlohmann-json-${{ hashFiles('json/CMakeLists.txt') }}
-        restore-keys: |
-          nlohmann-json-
-
-    - name: Install nlohmann::json
-      run: |
-        git clone https://github.com/nlohmann/json.git
-        cd json
-        sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_TESTING=OFF
-        sudo cmake --build build --target install -j8
-        cd ..
+        python3 -m pip install -U pip
+        python3 -m pip install gn ninja
 
     # キャッシュを使ったSkiaのビルド
     - name: Cache Skia build
       uses: actions/cache@v4
       with:
-        path: ./skia/build
-        key: skia-${{ hashFiles('skia/CMakeLists.txt') }}
+        path: ./skia/out/Release
+        key: skia-${{ hashFiles('skia/DEPS') }}
         restore-keys: |
           skia-
 
@@ -97,13 +48,12 @@ jobs:
         git clone https://skia.googlesource.com/skia.git
         cd skia
         python3 tools/git-sync-deps
-        if [ ! -d "build" ]; then
-          mkdir build
+        if [ ! -d "out/Release" ]; then
+          mkdir -p out/Release
         fi
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSKIA_BUILD_FOR_SYSTEM=ON
-        cmake --build . --target install -j8
-        cd ../..
+        gn gen out/Release --args='is_official_build=true skia_enable_gpu=true'
+        ninja -C out/Release skia
+        cd ..
 
     # CMakeの構成
     - name: Configure CMake
