@@ -114,9 +114,8 @@ jobs:
       run: |
         git clone 'https://chromium.googlesource.com/chromium/tools/depot_tools.git'
         export PATH="${PWD}/depot_tools:${PATH}"
-        sudo git clone https://skia.googlesource.com/skia.git /root/skia
-        sudo chmod -R 755 /root/skia
-        cd /root/skia
+        git clone https://skia.googlesource.com/skia.git
+        cd skia
         sudo python3 tools/git-sync-deps
         sudo python3 bin/fetch-ninja
         sudo tools/install_dependencies.sh
