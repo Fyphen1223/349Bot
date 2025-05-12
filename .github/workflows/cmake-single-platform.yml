@@ -50,7 +50,9 @@ jobs:
         git clone https://skia.googlesource.com/skia.git
         cd skia
         python3 tools/git-sync-deps
-        mkdir build
+        if [ ! -d "build" ]; then
+          mkdir build
+        fi
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSKIA_BUILD_FOR_SYSTEM=ON
         cmake --build . --target install -j8
