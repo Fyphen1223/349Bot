@@ -118,7 +118,7 @@ jobs:
         cd skia
         sudo python3 tools/git-sync-deps
         sudo python3 bin/fetch-ninja
-        sudo tools/install_dependencies.sh
+        # sudo tools/install_dependencies.sh
         if [ ! -d "out/Static" ]; then
           sudo mkdir -p out/Static
         fi
