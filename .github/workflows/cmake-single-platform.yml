@@ -34,6 +34,57 @@ jobs:
         python3 -m pip install -U pip
         python3 -m pip install gn ninja
 
+    # キャッシュを使ったDPPのビルド
+    - name: Cache DPP build
+      uses: actions/cache@v4
+      with:
+        path: ./DPP/build
+        key: dpp-${{ hashFiles('DPP/CMakeLists.txt') }}
+        restore-keys: |
+          dpp-
+
+    - name: Build and Install DPP
+      run: |
+        git clone https://github.com/brainboxdotcc/DPP.git
+        cd DPP
+        cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        cmake --build build --target install -j8
+        cd ..
+
+    # キャッシュを使ったlibhvのビルド
+    - name: Cache libhv build
+      uses: actions/cache@v4
+      with:
+        path: ./libhv/build
+        key: libhv-${{ hashFiles('libhv/CMakeLists.txt') }}
+        restore-keys: |
+          libhv-
+
+    - name: Build and Install libhv
+      run: |
+        git clone https://github.com/ithewei/libhv.git
+        cd libhv
+        cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        cmake --build build --target install -j8
+        cd ..
+
+    # キャッシュを使ったnlohmann::jsonのビルド
+    - name: Cache nlohmann::json build
+      uses: actions/cache@v4
+      with:
+        path: ./json/build
+        key: nlohmann-json-${{ hashFiles('json/CMakeLists.txt') }}
+        restore-keys: |
+          nlohmann-json-
+
+    - name: Build and Install nlohmann::json
+      run: |
+        git clone https://github.com/nlohmann/json.git
+        cd json
+        cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_TESTING=OFF
+        cmake --build build --target install -j8
+        cd ..
+
     # キャッシュを使ったSkiaのビルド
     - name: Cache Skia build
       uses: actions/cache@v4
@@ -43,7 +94,7 @@ jobs:
         restore-keys: |
           skia-
 
-    - name: Install Skia
+    - name: Build and Install Skia
       run: |
         git clone https://skia.googlesource.com/skia.git
         cd skia
@@ -57,11 +108,11 @@ jobs:
 
     # CMakeの構成
     - name: Configure CMake
-      run: sudo cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     # 並列ビルドとターゲットの最小化
     - name: Build
-      run: sudo cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8 --target 349Bot
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8 --target 349Bot
 
     # アーティファクトのアップロード
     - name: Upload artifact
