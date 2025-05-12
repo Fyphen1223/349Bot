@@ -39,7 +39,7 @@ jobs:
       run: |
         git clone https://github.com/ithewei/libhv.git
         cd libhv
-        sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_OPENSSL
         sudo cmake --build build --target install -j8
         cd ..
 
