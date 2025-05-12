@@ -19,7 +19,7 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake git libssl-dev zlib1g-dev libopus-dev
+        sudo apt-get install -y build-essential cmake git libssl-dev zlib1g-dev libopus-dev python3
 
     - name: Install dpp
       run: |
@@ -44,6 +44,17 @@ jobs:
         sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_TESTING=OFF
         sudo cmake --build build --target install -j8
         cd ..
+
+    - name: Install Skia
+      run: |
+        git clone https://skia.googlesource.com/skia.git
+        cd skia
+        python3 tools/git-sync-deps
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSKIA_BUILD_FOR_SYSTEM=ON
+        cmake --build . --target install -j8
+        cd ../..
 
     - name: Configure CMake
       run: sudo cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
