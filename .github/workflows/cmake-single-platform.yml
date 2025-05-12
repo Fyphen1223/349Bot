@@ -55,14 +55,18 @@ jobs:
     # Skiaのビルドとインストール（sudoを使用）
     - name: Build and Install Skia
       run: |
+        git clone 'https://chromium.googlesource.com/chromium/tools/depot_tools.git'
+        export PATH="${PWD}/depot_tools:${PATH}"
         git clone https://skia.googlesource.com/skia.git
         cd skia
         python3 tools/git-sync-deps
+        sudo python3 bin/fetch-ninja
+        sudo tools/install_dependencies.sh
         if [ ! -d "out/Release" ]; then
           mkdir -p out/Release
         fi
-        sudo gn gen out/Release --args='is_official_build=true skia_enable_gpu=true'
-        sudo ninja -C out/Release skia
+        sudo bin/gn gen out/Static --args='is_official_build=true'
+        sudo ninja -C out/Static skia
         cd ..
 
     # CMakeの構成（sudoを使用）
