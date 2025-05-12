@@ -14,12 +14,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # ソースコードのチェックアウト
     - uses: actions/checkout@v4
 
-    - name: Set up dependencies
+    # キャッシュを使ったaptパッケージのインストール
+    - name: Cache apt packages
+      uses: actions/cache@v4
+      with:
+        path: /var/cache/apt
+        key: ${{ runner.os }}-apt-${{ hashFiles('apt-dependencies.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-apt-
+
+    - name: Install dependencies
       run: |
+        echo "build-essential cmake git libssl-dev zlib1g-dev libopus-dev python3" > apt-dependencies.txt
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake git libssl-dev zlib1g-dev libopus-dev python3
+        sudo apt-get install -y $(cat apt-dependencies.txt)
+
+    # キャッシュを使ったDPPのビルド
+    - name: Cache DPP build
+      uses: actions/cache@v4
+      with:
+        path: ./DPP/build
+        key: dpp-${{ hashFiles('DPP/CMakeLists.txt') }}
+        restore-keys: |
+          dpp-
 
     - name: Install dpp
       run: |
@@ -29,6 +49,15 @@ jobs:
         sudo cmake --build build --target install -j8
         cd ..
 
+    # キャッシュを使ったlibhvのビルド
+    - name: Cache libhv build
+      uses: actions/cache@v4
+      with:
+        path: ./libhv/build
+        key: libhv-${{ hashFiles('libhv/CMakeLists.txt') }}
+        restore-keys: |
+          libhv-
+
     - name: Install libhv
       run: |
         git clone https://github.com/ithewei/libhv.git
@@ -37,6 +66,15 @@ jobs:
         sudo cmake --build build --target install -j8
         cd ..
 
+    # キャッシュを使ったnlohmann::jsonのビルド
+    - name: Cache nlohmann::json build
+      uses: actions/cache@v4
+      with:
+        path: ./json/build
+        key: nlohmann-json-${{ hashFiles('json/CMakeLists.txt') }}
+        restore-keys: |
+          nlohmann-json-
+
     - name: Install nlohmann::json
       run: |
         git clone https://github.com/nlohmann/json.git
@@ -44,6 +82,15 @@ jobs:
         sudo cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_TESTING=OFF
         sudo cmake --build build --target install -j8
         cd ..
+
+    # キャッシュを使ったSkiaのビルド
+    - name: Cache Skia build
+      uses: actions/cache@v4
+      with:
+        path: ./skia/build
+        key: skia-${{ hashFiles('skia/CMakeLists.txt') }}
+        restore-keys: |
+          skia-
 
     - name: Install Skia
       run: |
@@ -58,12 +105,15 @@ jobs:
         cmake --build . --target install -j8
         cd ../..
 
+    # CMakeの構成
     - name: Configure CMake
       run: sudo cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
+    # 並列ビルドとターゲットの最小化
     - name: Build
-      run: sudo cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
+      run: sudo cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8 --target 349Bot
 
+    # アーティファクトのアップロード
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
