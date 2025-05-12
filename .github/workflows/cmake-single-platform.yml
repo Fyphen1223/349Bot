@@ -17,7 +17,16 @@ jobs:
     # ソースコードのチェックアウト
     - uses: actions/checkout@v4
 
-    # 必要な依存関係のインストール（sudoを使用）
+    # apt パッケージキャッシュの復元
+    - name: Cache apt packages
+      uses: actions/cache@v4
+      with:
+        path: /var/cache/apt
+        key: ${{ runner.os }}-apt-${{ hashFiles('**/dependencies.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-apt
+
+    # 必要な依存関係のインストール
     - name: Install dependencies
       run: |
         sudo mkdir /root/skia
@@ -28,7 +37,25 @@ jobs:
         python3 -m pip install -U pip
         sudo python3 -m pip install gn ninja
 
-    # DPPのビルドとインストール（sudoを使用）
+    # Python パッケージキャッシュの復元
+    - name: Cache Python packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip
+
+    # DPPのキャッシュ
+    - name: Cache DPP
+      uses: actions/cache@v4
+      with:
+        path: ./DPP/build
+        key: ${{ runner.os }}-DPP-${{ hashFiles('**/DPP/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-DPP
+
+    # DPPのビルドとインストール
     - name: Build and Install DPP
       run: |
         git clone https://github.com/brainboxdotcc/DPP.git
@@ -37,7 +64,16 @@ jobs:
         sudo cmake --build build --target install -j8
         cd ..
 
-    # libhvのビルドとインストール（sudoを使用）
+    # libhvのキャッシュ
+    - name: Cache libhv
+      uses: actions/cache@v4
+      with:
+        path: ./libhv/build
+        key: ${{ runner.os }}-libhv-${{ hashFiles('**/libhv/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-libhv
+
+    # libhvのビルドとインストール
     - name: Build and Install libhv
       run: |
         git clone https://github.com/ithewei/libhv.git
@@ -46,7 +82,16 @@ jobs:
         sudo cmake --build build --target install -j8
         cd ..
 
-    # nlohmann::jsonのビルドとインストール（sudoを使用）
+    # nlohmann::jsonのキャッシュ
+    - name: Cache nlohmann::json
+      uses: actions/cache@v4
+      with:
+        path: ./json/build
+        key: ${{ runner.os }}-json-${{ hashFiles('**/json/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-json
+
+    # nlohmann::jsonのビルドとインストール
     - name: Build and Install nlohmann::json
       run: |
         git clone https://github.com/nlohmann/json.git
@@ -55,13 +100,23 @@ jobs:
         sudo cmake --build build --target install -j8
         cd ..
 
-    # Skiaのビルドとインストール（sudoを使用）
+    # Skiaのキャッシュ
+    - name: Cache Skia
+      uses: actions/cache@v4
+      with:
+        path: /root/skia/out/Static
+        key: ${{ runner.os }}-skia-${{ hashFiles('**/skia/VERSION') }}
+        restore-keys: |
+          ${{ runner.os }}-skia
+
+    # Skiaのビルドとインストール
     - name: Build and Install Skia
       run: |
         git clone 'https://chromium.googlesource.com/chromium/tools/depot_tools.git'
         export PATH="${PWD}/depot_tools:${PATH}"
         sudo git clone https://skia.googlesource.com/skia.git /root/skia
-        sudo cd /root/skia
+        sudo chmod -R 755 /root/skia
+        cd /root/skia
         sudo python3 tools/git-sync-deps
         sudo python3 bin/fetch-ninja
         sudo tools/install_dependencies.sh
@@ -70,13 +125,12 @@ jobs:
         fi
         sudo bin/gn gen out/Static --args='is_official_build=true'
         sudo ninja -C out/Static skia
-        cd ..
 
-    # CMakeの構成（sudoを使用）
+    # CMakeの構成
     - name: Configure CMake
       run: sudo cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
-    # ビルド（sudoを使用）
+    # ビルド
     - name: Build
       run: sudo cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8 --target 349Bot
 
