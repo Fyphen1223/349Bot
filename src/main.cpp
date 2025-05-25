@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 		10,	  // Total tracks in queue
 		config["card"]["fontFamily"].get<std::string>().c_str());
 
-	bool shouldRegisterSlashCommands = false;
+	bool shouldRegisterSlashCommands = config["bot"]["registerSlashCommands"].get<bool>();
 	for (int i = 0; i < argc; ++i) {
 		if (std::string(argv[i]) == "--help") {
 			info("Help is available at this project's GitHub page.");

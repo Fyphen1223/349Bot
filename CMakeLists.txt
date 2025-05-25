@@ -62,6 +62,7 @@ add_executable(${PROJECT_NAME}
 	src/events/commands.cpp
 	src/commands/ping.cpp
 	src/commands/play.cpp
+	src/commands/test.cpp
 	src/util/skia.cpp
 )
 

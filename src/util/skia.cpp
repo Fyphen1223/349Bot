@@ -216,7 +216,7 @@ sk_sp<SkData> CreateMusicCard(
 	float sourceTextY = badgeY + sourceBadgeHeight / 2.0f + sourceNameBounds.height() / 2.0f;
 	canvas->drawString(sourceName.c_str(), sourceTextX, sourceTextY, sourceFont, textPaint);
 
-	// トラック番号
+	// Track number
 	char trackStr[20];
 	snprintf(trackStr, sizeof(trackStr), "%d / %d", currentTrack, totalTracks);
 	SkRect trackBounds;
@@ -224,7 +224,7 @@ sk_sp<SkData> CreateMusicCard(
 	textPaint.setColor(textColor);
 	canvas->drawString(trackStr, width - padding - trackBounds.width(), padding * 2.0f, trackFont, textPaint);
 
-	// プログレスバー
+	// Progress bar
 	float progressBarWidth = width - 2 * padding;
 	SkRect progressBarBackRect = SkRect::MakeXYWH(padding, progressBarY, progressBarWidth, progressBarHeight);
 	paint.setColor(progressBgColor);
@@ -239,7 +239,7 @@ sk_sp<SkData> CreateMusicCard(
 		canvas->drawRect(progressBarFrontRect, paint);
 	}
 
-	// タイムスタンプ
+	// Timestamp
 	std::string currentTimeStr = format_time(currentTimeSec);
 	std::string totalTimeStr = format_time(totalTimeSec);
 	float timeY = progressBarY + progressBarHeight + padding * 0.8f;
@@ -249,11 +249,11 @@ sk_sp<SkData> CreateMusicCard(
 	timeFont.measureText(totalTimeStr.c_str(), totalTimeStr.length(), SkTextEncoding::kUTF8, &totalTimeBounds);
 	canvas->drawString(totalTimeStr.c_str(), width - padding - totalTimeBounds.width(), timeY, timeFont, textPaint);
 
-	// --- ここで画像取得を待つ ---
+	// Wait for the images to be fetched
 	sk_sp<SkImage> thumbnailImage = thumbFuture.get();
 	sk_sp<SkImage> uploaderIconImage = iconFuture.get();
 
-	// サムネイル画像を描画
+	// Draw thumbnail image
 	if (thumbnailImage) {
 		canvas->save();
 		canvas->clipRRect(thumbnailRRect, true);
@@ -261,7 +261,7 @@ sk_sp<SkData> CreateMusicCard(
 		canvas->restore();
 	}
 
-	// アップローダーアイコンを描画
+	// Draw uploader's icon
 	if (uploaderIconImage) {
 		SkPath circleClip;
 		circleClip.addCircle(uploaderIconX + uploaderIconSize / 2.0f, uploaderIconY + uploaderIconSize / 2.0f, uploaderIconSize / 2.0f);
@@ -270,7 +270,7 @@ sk_sp<SkData> CreateMusicCard(
 		canvas->drawImageRect(uploaderIconImage, SkRect::MakeXYWH(uploaderIconX, uploaderIconY, uploaderIconSize, uploaderIconSize), SkSamplingOptions(SkFilterMode::kLinear));
 		canvas->restore();
 	} else {
-		// プレースホルダー
+		// placeholder
 		paint.setColor(SK_ColorDKGRAY);
 		paint.setStyle(SkPaint::kFill_Style);
 		canvas->drawCircle(uploaderIconX + uploaderIconSize / 2.0f, uploaderIconY + uploaderIconSize / 2.0f, uploaderIconSize / 2.0f, paint);

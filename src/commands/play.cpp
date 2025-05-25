@@ -8,14 +8,12 @@
 void handlePlayerEventsOnDiscord(Player &player, const std::string &guildId) {
 	player.onTrackStart([guildId](std::string data) {
 		dpp::message msg;
-		msg.content = "Now playing: " + data;
 		msg.channel_id = GQ.queue[guildId].textChannelId;
 		msg.guild_id = dpp::snowflake(guildId);
 		BH.bot->message_create(msg, [guildId](const dpp::confirmation_callback_t &event) {});
 	});
 	player.onTrackEnd([guildId](std::string data) {
 		dpp::message msg;
-		msg.content = "Track ended: " + data;
 		msg.channel_id = GQ.queue[guildId].textChannelId;
 		msg.guild_id = dpp::snowflake(guildId);
 		BH.bot->message_create(msg, [guildId](const dpp::confirmation_callback_t &event) {});
@@ -35,7 +33,6 @@ void handlePlayerEventsOnDiscord(Player &player, const std::string &guildId) {
 										  .set_description("The playback queue is now empty. Add more tracks to continue listening.")
 										  .set_color(dpp::colors::black);// Example: set a color for the embed
 
-			// Add the created embed object to the message's embeds vector
 			msg.embeds.push_back(embed_object);
 			BH.bot->message_create(msg, [guildId](const dpp::confirmation_callback_t &event) {});
 		}
